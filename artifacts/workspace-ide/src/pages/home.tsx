@@ -20,177 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
-
-type Theme = {
-  bgBase: string;
-  bgSurface: string;
-  bgPanel: string;
-  bgInput: string;
-  border: string;
-  borderLight: string;
-  textPrimary: string;
-  textSecondary: string;
-  textMuted: string;
-  textDimmed: string;
-  accent: string;
-  accentBg: string;
-  accentBorder: string;
-  accentText: string;
-  glassMesh: string;
-  glassPanelBg: string;
-  glassPanelBorder: string;
-  inputPanelShadow: string;
-  sidebarHeaderBg: string;
-  sidebarHeaderGlow: string;
-  navHover: string;
-  itemHover: string;
-};
-
-const darkTheme: Theme = {
-  bgBase: "#05080d",
-  bgSurface: "#080c14",
-  bgPanel: "#0b1019",
-  bgInput: "#070a12",
-  border: "#1a1428",
-  borderLight: "#231a38",
-  textPrimary: "#FFFFFF",
-  textSecondary: "#c4b8e0",
-  textMuted: "#9080c0",
-  textDimmed: "#6b5890",
-  accent: "#8A2BE2",
-  accentBg: "rgba(138,43,226,0.12)",
-  accentBorder: "rgba(138,43,226,0.32)",
-  accentText: "#c084fc",
-  glassMesh: `radial-gradient(ellipse 900px 600px at 15% 10%, rgba(138,43,226,0.16) 0%, transparent 60%),radial-gradient(ellipse 700px 500px at 85% 20%, rgba(168,85,247,0.09) 0%, transparent 55%),radial-gradient(ellipse 600px 700px at 70% 80%, rgba(138,43,226,0.12) 0%, transparent 60%),radial-gradient(ellipse 500px 400px at 10% 85%, rgba(110,30,190,0.08) 0%, transparent 55%)`,
-  glassPanelBg: "rgba(8,12,20,0.75)",
-  glassPanelBorder: "rgba(138,43,226,0.25)",
-  inputPanelShadow:
-    "0 0 0 1px rgba(138,43,226,0.08), 0 4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
-  sidebarHeaderBg: "linear-gradient(90deg, #0a0610 0%, #05080d 100%)",
-  sidebarHeaderGlow:
-    "radial-gradient(ellipse 60% 100% at 0% 50%, rgba(138,43,226,0.12) 0%, transparent 70%)",
-  navHover: "rgba(255,255,255,0.05)",
-  itemHover: "rgba(255,255,255,0.04)",
-};
-
-const lightTheme: Theme = {
-  bgBase: "#f5f2fb",
-  bgSurface: "#f9f7fe",
-  bgPanel: "#ffffff",
-  bgInput: "#ede9fc",
-  border: "#ccc0e8",
-  borderLight: "#ddd6f5",
-  textPrimary: "#0d0520",
-  textSecondary: "#2d1a5a",
-  textMuted: "#6b5b9e",
-  textDimmed: "#7b6aaa",
-  accent: "#7c3aed",
-  accentBg: "rgba(124,58,237,0.09)",
-  accentBorder: "rgba(124,58,237,0.28)",
-  accentText: "#6d28d9",
-  glassMesh: `radial-gradient(ellipse 900px 600px at 15% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),radial-gradient(ellipse 700px 500px at 85% 20%, rgba(168,85,247,0.08) 0%, transparent 55%),radial-gradient(ellipse 600px 700px at 70% 80%, rgba(124,58,237,0.10) 0%, transparent 60%),radial-gradient(ellipse 500px 400px at 10% 85%, rgba(100,40,200,0.07) 0%, transparent 55%)`,
-  glassPanelBg: "rgba(255,255,255,0.75)",
-  glassPanelBorder: "rgba(124,58,237,0.18)",
-  inputPanelShadow:
-    "0 2px 20px rgba(124,58,237,0.1), inset 0 1px 0 rgba(255,255,255,0.9)",
-  sidebarHeaderBg: "linear-gradient(90deg, #f0ebfc 0%, #f5f2fb 100%)",
-  sidebarHeaderGlow:
-    "radial-gradient(ellipse 60% 100% at 0% 50%, rgba(124,58,237,0.08) 0%, transparent 70%)",
-  navHover: "rgba(0,0,0,0.04)",
-  itemHover: "rgba(0,0,0,0.03)",
-};
-
-function ThemedLogoFull({ tm, size = 96 }: { tm: Theme; size?: number }) {
-  return (
-    <motion.div
-      className="relative flex flex-col items-center gap-3 py-4 px-2"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-    >
-      <VenomLogo size={size} />
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="relative flex items-center">
-          <motion.span
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              color: tm.textPrimary,
-            }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          >
-            VENOM
-          </motion.span>
-          <motion.span
-            style={{
-              fontSize: 22,
-              fontWeight: 300,
-              letterSpacing: "0.08em",
-              color: tm.accent,
-              marginLeft: 4,
-            }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-          >
-            GPT
-          </motion.span>
-        </div>
-        <motion.div
-          style={{
-            height: 3,
-            borderRadius: 9999,
-            background: `linear-gradient(to right, ${tm.accent}, rgba(0,255,255,0.6), transparent)`,
-          }}
-          initial={{ width: 0 }}
-          animate={{ width: "100%" }}
-          transition={{ delay: 0.7, duration: 0.6 }}
-        />
-        <motion.div
-          className="flex items-center gap-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-        >
-          <motion.div
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: tm.accent,
-            }}
-            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-          <span
-            style={{
-              fontSize: 11,
-              fontFamily: "monospace",
-              color: tm.textMuted,
-              letterSpacing: "0.35em",
-              textTransform: "uppercase",
-            }}
-          >
-            Cyber Intelligence
-          </span>
-          <motion.div
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: tm.accent,
-            }}
-            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-          />
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-}
+import { type VGTheme, darkTheme, lightTheme } from "@/lib/theme";
 
 const SUGGESTIONS = [
   {
@@ -236,12 +66,320 @@ const LOCKED_NAV = [
   { icon: BookTemplate, label: "Templates" },
 ];
 
+function HeroLogo({ tm, size = 100 }: { tm: VGTheme; size?: number }) {
+  return (
+    <motion.div
+      className="flex flex-col items-center"
+      style={{ gap: 18 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.55 }}
+    >
+      <VenomLogo size={size} />
+      <div className="flex flex-col items-center" style={{ gap: 8 }}>
+        <div className="flex items-baseline">
+          <motion.span
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              letterSpacing: "0.10em",
+              color: tm.textPrimary,
+              lineHeight: 1,
+              transition: "color 0.3s",
+            }}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+          >
+            VENOM
+          </motion.span>
+          <motion.span
+            style={{
+              fontSize: 30,
+              fontWeight: 300,
+              letterSpacing: "0.10em",
+              color: tm.accent,
+              marginLeft: 6,
+              lineHeight: 1,
+              transition: "color 0.3s",
+            }}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35, type: "spring", stiffness: 200 }}
+          >
+            GPT
+          </motion.span>
+        </div>
+        <motion.div
+          style={{
+            height: 2,
+            borderRadius: 9999,
+            background: `linear-gradient(to right, ${tm.accent}, rgba(0,220,255,0.65), transparent)`,
+          }}
+          initial={{ width: 0 }}
+          animate={{ width: "100%" }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+        />
+        <motion.div
+          className="flex items-center gap-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.92 }}
+        >
+          <motion.div
+            style={{ width: 5, height: 5, borderRadius: "50%", background: tm.accent }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          <span
+            style={{
+              fontSize: 10,
+              fontFamily: "monospace",
+              color: tm.textMuted,
+              letterSpacing: "0.42em",
+              textTransform: "uppercase",
+              transition: "color 0.3s",
+            }}
+          >
+            Cyber Intelligence
+          </span>
+          <motion.div
+            style={{ width: 5, height: 5, borderRadius: "50%", background: tm.accent }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+          />
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+function SidebarActiveBtn({ tm, onClick }: { tm: VGTheme; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      title="Open IDE"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "9px 12px 9px 16px",
+        borderRadius: 8,
+        background: hovered ? tm.accentBgHover : tm.accentBg,
+        border: `1px solid ${tm.accentBorder}`,
+        color: tm.accentText,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: 600,
+        letterSpacing: "0.01em",
+        textAlign: "left",
+        width: "100%",
+        overflow: "hidden",
+        transition: "background 0.15s, box-shadow 0.15s",
+        boxShadow: hovered ? `0 2px 14px ${tm.accentShadow}` : "none",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 3,
+          height: 20,
+          borderRadius: "0 3px 3px 0",
+          background: tm.accent,
+        }}
+      />
+      <LayoutGrid size={15} style={{ opacity: 0.9, flexShrink: 0 }} />
+      <span
+        className="vg-sidebar-label"
+        style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+      >
+        Open IDE
+      </span>
+      <ChevronRight
+        size={12}
+        className="vg-sidebar-label"
+        style={{
+          opacity: 0.55,
+          flexShrink: 0,
+          transition: "transform 0.15s",
+          transform: hovered ? "translateX(2px)" : "none",
+        }}
+      />
+    </button>
+  );
+}
+
+function LockedNavItem({ tm, icon: Icon, label }: { tm: VGTheme; icon: React.ElementType; label: string }) {
+  return (
+    <div
+      title={`${label} — coming soon`}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "9px 12px",
+        borderRadius: 8,
+        color: tm.lockedNavColor,
+        cursor: "not-allowed",
+        fontSize: 13,
+        fontWeight: 500,
+        userSelect: "none",
+        overflow: "hidden",
+        transition: "color 0.3s",
+      }}
+    >
+      <Icon size={15} style={{ flexShrink: 0, opacity: 0.72 }} />
+      <span
+        className="vg-sidebar-label"
+        style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+      >
+        {label}
+      </span>
+      <Lock
+        size={12}
+        className="vg-sidebar-label"
+        style={{ flexShrink: 0, color: tm.accentText, opacity: 0.55 }}
+      />
+    </div>
+  );
+}
+
+function ThemeToggleBtn({ isDark, tm, onToggle }: { isDark: boolean; tm: VGTheme; onToggle: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onToggle}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        padding: "8px 12px",
+        borderRadius: 8,
+        background: hovered ? tm.navHover : "transparent",
+        border: `1px solid ${hovered ? tm.accentBorder : tm.border}`,
+        color: hovered ? tm.textSecondary : tm.textMuted,
+        cursor: "pointer",
+        fontSize: 12,
+        fontWeight: 500,
+        width: "100%",
+        overflow: "hidden",
+        transition: "background 0.15s, border-color 0.15s, color 0.15s",
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {isDark ? (
+          <motion.span
+            key="sun"
+            initial={{ opacity: 0, rotate: -30, scale: 0.7 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: 30, scale: 0.7 }}
+            transition={{ duration: 0.2 }}
+            style={{ display: "flex", flexShrink: 0 }}
+          >
+            <Sun size={14} />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="moon"
+            initial={{ opacity: 0, rotate: 30, scale: 0.7 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: -30, scale: 0.7 }}
+            transition={{ duration: 0.2 }}
+            style={{ display: "flex", flexShrink: 0 }}
+          >
+            <Moon size={14} />
+          </motion.span>
+        )}
+      </AnimatePresence>
+      <span className="vg-sidebar-label" style={{ whiteSpace: "nowrap" }}>
+        {isDark ? "Light mode" : "Dark mode"}
+      </span>
+    </button>
+  );
+}
+
+function PromptCard({
+  icon: Icon,
+  label,
+  tm,
+  delay,
+  onClick,
+}: {
+  icon: React.ElementType;
+  label: string;
+  tm: VGTheme;
+  delay: number;
+  onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <motion.button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+      whileTap={{ scale: 0.97 }}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 12,
+        padding: "13px 15px",
+        borderRadius: 11,
+        background: hovered ? tm.accentBg : tm.glassPanelBg,
+        border: `1px solid ${hovered ? tm.accentBorder : tm.glassPanelBorder}`,
+        color: hovered ? tm.textSecondary : tm.textMuted,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: 500,
+        textAlign: "left",
+        backdropFilter: "blur(8px)",
+        transition: "background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.15s",
+        transform: hovered ? "translateY(-2px)" : "none",
+        boxShadow: hovered ? `0 4px 22px ${tm.accentShadow}` : "none",
+      }}
+    >
+      <div
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 8,
+          background: hovered ? tm.accentBgHover : tm.accentBg,
+          border: `1px solid ${hovered ? tm.accentBorder : "transparent"}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          transition: "background 0.18s, border-color 0.18s",
+        }}
+      >
+        <Icon size={14} style={{ color: tm.accent }} />
+      </div>
+      <span style={{ lineHeight: 1.5, paddingTop: 6 }}>{label}</span>
+    </motion.button>
+  );
+}
+
 export default function HomePage() {
   const [isDark, setIsDark] = useState(true);
   const [prompt, setPrompt] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
+  const [sendHovered, setSendHovered] = useState(false);
   const [, navigate] = useLocation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const tm = isDark ? darkTheme : lightTheme;
+  const isPromptFilled = !!prompt.trim();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,6 +410,7 @@ export default function HomePage() {
         color: tm.textPrimary,
         fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
         position: "relative",
+        transition: "background 0.3s, color 0.3s",
       }}
     >
       {/* Background mesh */}
@@ -282,6 +421,18 @@ export default function HomePage() {
           background: tm.glassMesh,
           pointerEvents: "none",
           zIndex: 0,
+          transition: "background 0.4s",
+        }}
+      />
+      {/* Center atmospheric glow */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: tm.atmosphericGlow,
+          pointerEvents: "none",
+          zIndex: 0,
+          transition: "background 0.4s",
         }}
       />
 
@@ -293,64 +444,83 @@ export default function HomePage() {
           zIndex: 1,
           display: "flex",
           flexDirection: "column",
-          width: 220,
-          minWidth: 220,
-          maxWidth: 220,
+          width: 240,
+          minWidth: 240,
+          maxWidth: 240,
           height: "100%",
-          borderRight: `1px solid ${tm.border}`,
-          background: tm.sidebarHeaderBg,
+          borderRight: `1px solid ${tm.sidebarDivider}`,
+          background: tm.sidebarBg,
           flexShrink: 0,
           overflowX: "hidden",
+          transition: "background 0.3s, border-color 0.3s",
         }}
       >
-        {/* Sidebar glow */}
+        {/* ── Branding block ── */}
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background: tm.sidebarHeaderGlow,
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Logo area */}
-        <div
-          style={{
-            padding: "20px 16px 12px",
+            padding: "22px 16px 20px",
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            borderBottom: `1px solid ${tm.border}`,
+            gap: 13,
+            borderBottom: `1px solid ${tm.sidebarDivider}`,
             position: "relative",
             overflow: "hidden",
+            background: tm.sidebarHeaderBg,
+            transition: "background 0.3s, border-color 0.3s",
           }}
         >
-          <div style={{ flexShrink: 0 }}>
-            <VenomLogo size={28} />
+          {/* Header corner glow — stays inside branding block */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: tm.sidebarHeaderGlow,
+              pointerEvents: "none",
+              transition: "background 0.4s",
+            }}
+          />
+          <div
+            style={{
+              position: "relative",
+              flexShrink: 0,
+              width: 42,
+              height: 42,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 11,
+              background: tm.logoContainerBg,
+              border: `1px solid ${tm.logoContainerBorder}`,
+              boxShadow: tm.logoContainerShadow,
+              transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s",
+            }}
+          >
+            <VenomLogo size={27} />
           </div>
-          <div className="vg-sidebar-label" style={{ minWidth: 0 }}>
+          <div className="vg-sidebar-label" style={{ minWidth: 0, position: "relative" }}>
             <div
               style={{
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                color: tm.textPrimary,
-                lineHeight: 1.2,
+                fontSize: 15.5,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                lineHeight: 1.15,
                 whiteSpace: "nowrap",
+                transition: "color 0.3s",
               }}
             >
-              <span>VENOM</span>
-              <span style={{ color: tm.accent, fontWeight: 300 }}>GPT</span>
+              <span style={{ color: tm.textPrimary }}>VENOM</span>
+              <span style={{ color: tm.accent, fontWeight: 300, transition: "color 0.3s" }}>GPT</span>
             </div>
             <div
               style={{
-                fontSize: 9,
+                fontSize: 9.5,
                 fontFamily: "monospace",
-                color: tm.textDimmed,
-                letterSpacing: "0.3em",
+                color: tm.textMuted,
+                letterSpacing: "0.28em",
                 textTransform: "uppercase",
-                marginTop: 1,
+                marginTop: 4,
                 whiteSpace: "nowrap",
+                transition: "color 0.3s",
               }}
             >
               Cyber Intelligence
@@ -358,180 +528,60 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Nav */}
+        {/* ── Nav ── */}
         <nav
           style={{
             flex: 1,
-            padding: "12px 8px",
+            padding: "10px 8px",
             display: "flex",
             flexDirection: "column",
-            gap: 2,
+            gap: 1,
             position: "relative",
           }}
         >
-          {/* Open IDE — active nav entry */}
-          <button
-            onClick={() => navigate("/ide")}
-            title="Open IDE"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "8px 10px",
-              borderRadius: 7,
-              background: tm.accentBg,
-              border: `1px solid ${tm.accentBorder}`,
-              color: tm.accentText,
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 500,
-              textAlign: "left",
-              width: "100%",
-              transition: "background 0.15s, border-color 0.15s",
-              overflow: "hidden",
-            }}
-          >
-            <LayoutGrid size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
-            <span
-              className="vg-sidebar-label"
-              style={{
-                flex: 1,
-                minWidth: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Open IDE
-            </span>
-            <ChevronRight
-              size={12}
-              className="vg-sidebar-label"
-              style={{ opacity: 0.5, flexShrink: 0 }}
-            />
-          </button>
+          <SidebarActiveBtn tm={tm} onClick={() => navigate("/ide")} />
 
-          {/* Divider */}
           <div
             style={{
-              height: 1,
-              background: tm.border,
-              margin: "6px 4px",
-            }}
-          />
-
-          {/* Locked nav items */}
-          {LOCKED_NAV.map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              title={`${label} — coming soon`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "7px 10px",
-                borderRadius: 7,
-                color: tm.textDimmed,
-                cursor: "not-allowed",
-                fontSize: 13,
-                fontWeight: 400,
-                opacity: 0.55,
-                userSelect: "none",
-                overflow: "hidden",
-              }}
-            >
-              <Icon size={14} style={{ flexShrink: 0 }} />
-              <span
-                className="vg-sidebar-label"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {label}
-              </span>
-              <Lock
-                size={10}
-                className="vg-sidebar-label"
-                style={{ flexShrink: 0, opacity: 0.6 }}
-              />
-            </div>
-          ))}
-        </nav>
-
-        {/* Theme toggle */}
-        <div
-          style={{
-            padding: "12px 8px",
-            borderTop: `1px solid ${tm.border}`,
-            position: "relative",
-          }}
-        >
-          <button
-            onClick={() => setIsDark((d) => !d)}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            style={{
+              padding: "10px 4px 4px",
               display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "7px 10px",
-              borderRadius: 7,
-              background: "transparent",
-              border: `1px solid ${tm.border}`,
-              color: tm.textMuted,
-              cursor: "pointer",
-              fontSize: 12,
-              width: "100%",
-              transition: "background 0.15s, border-color 0.15s, color 0.15s",
-              overflow: "hidden",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background =
-                tm.navHover;
-              (e.currentTarget as HTMLButtonElement).style.color =
-                tm.textSecondary;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background =
-                "transparent";
-              (e.currentTarget as HTMLButtonElement).style.color = tm.textMuted;
+              flexDirection: "column",
+              gap: 1,
             }}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              {isDark ? (
-                <motion.span
-                  key="sun"
-                  initial={{ opacity: 0, rotate: -30 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 30 }}
-                  transition={{ duration: 0.18 }}
-                  style={{ display: "flex", flexShrink: 0 }}
-                >
-                  <Sun size={13} />
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="moon"
-                  initial={{ opacity: 0, rotate: 30 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: -30 }}
-                  transition={{ duration: 0.18 }}
-                  style={{ display: "flex", flexShrink: 0 }}
-                >
-                  <Moon size={13} />
-                </motion.span>
-              )}
-            </AnimatePresence>
-            <span
+            {/* Section label */}
+            <div
               className="vg-sidebar-label"
-              style={{ whiteSpace: "nowrap" }}
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: tm.sectionLabel,
+                padding: "0 8px",
+                marginBottom: 3,
+                transition: "color 0.3s",
+              }}
             >
-              {isDark ? "Light mode" : "Dark mode"}
-            </span>
-          </button>
+              Coming Soon
+            </div>
+
+            {LOCKED_NAV.map(({ icon, label }) => (
+              <LockedNavItem key={label} tm={tm} icon={icon} label={label} />
+            ))}
+          </div>
+        </nav>
+
+        {/* ── Theme toggle ── */}
+        <div
+          style={{
+            padding: "10px 8px 16px",
+            borderTop: `1px solid ${tm.sidebarDivider}`,
+            position: "relative",
+            transition: "border-color 0.3s",
+          }}
+        >
+          <ThemeToggleBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
         </div>
       </aside>
 
@@ -546,68 +596,73 @@ export default function HomePage() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px 24px 32px",
+          padding: "32px 36px 44px",
           overflowY: "auto",
-          gap: 0,
         }}
         className="vg-scroll"
       >
-        {/* Center column */}
         <div
           style={{
             width: "100%",
-            maxWidth: 700,
+            maxWidth: 720,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 32,
+            gap: 40,
           }}
         >
-          {/* Logo + tagline */}
+          {/* Hero */}
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.55 }}
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 12,
+              gap: 22,
             }}
           >
-            <ThemedLogoFull tm={tm} size={96} />
-            <p
+            <HeroLogo tm={tm} size={108} />
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
               style={{
-                fontSize: 15,
+                fontSize: 15.5,
                 color: tm.textMuted,
                 textAlign: "center",
-                maxWidth: 420,
-                lineHeight: 1.6,
+                maxWidth: 440,
+                lineHeight: 1.65,
                 letterSpacing: "0.01em",
+                transition: "color 0.3s",
               }}
             >
               Your AI-powered coding partner. Describe what you want to build
               and let VenomGPT handle the rest.
-            </p>
+            </motion.p>
           </motion.div>
 
           {/* Chat input */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
             style={{ width: "100%" }}
           >
             <form onSubmit={handleSubmit} style={{ width: "100%" }}>
               <div
                 style={{
                   width: "100%",
-                  borderRadius: 14,
-                  background: tm.glassPanelBg,
-                  border: `1px solid ${tm.glassPanelBorder}`,
-                  boxShadow: tm.inputPanelShadow,
-                  backdropFilter: "blur(12px)",
+                  borderRadius: 16,
+                  background: tm.inputPanelBg,
+                  border: `1.5px solid ${inputFocused ? tm.inputPanelBorder : tm.accentBorder}`,
+                  boxShadow: inputFocused
+                    ? `${tm.inputPanelShadow}, 0 0 0 3px ${tm.accentShadow}`
+                    : tm.inputPanelShadow,
+                  backdropFilter: "blur(16px)",
                   overflow: "hidden",
+                  transition: "border-color 0.2s, box-shadow 0.2s, background 0.3s",
                 }}
               >
                 <textarea
@@ -615,53 +670,76 @@ export default function HomePage() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
                   placeholder="Describe your project or ask VenomGPT to build something…"
                   rows={4}
                   style={{
                     width: "100%",
-                    padding: "16px 18px 12px",
+                    padding: "20px 22px 14px",
                     background: "transparent",
                     border: "none",
                     outline: "none",
                     resize: "none",
                     color: tm.textPrimary,
-                    fontSize: 14,
-                    lineHeight: 1.6,
+                    fontSize: 14.5,
+                    lineHeight: 1.65,
                     fontFamily: "inherit",
+                    transition: "color 0.3s",
                   }}
                 />
+                {/* Action rail */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "8px 12px",
+                    padding: "10px 16px 12px",
                     borderTop: `1px solid ${tm.border}`,
+                    background: tm.accentBg,
+                    transition: "border-color 0.3s, background 0.3s",
                   }}
                 >
-                  <span style={{ fontSize: 11, color: tm.textDimmed }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: tm.textDimmed,
+                      letterSpacing: "0.02em",
+                      transition: "color 0.3s",
+                    }}
+                  >
                     ↵ Enter to send · Shift+Enter for new line
                   </span>
                   <button
                     type="submit"
-                    disabled={!prompt.trim()}
+                    disabled={!isPromptFilled}
+                    onMouseEnter={() => setSendHovered(true)}
+                    onMouseLeave={() => setSendHovered(false)}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      padding: "7px 14px",
-                      borderRadius: 8,
-                      background: prompt.trim() ? tm.accent : "transparent",
-                      border: `1px solid ${prompt.trim() ? tm.accent : tm.accentBorder}`,
-                      color: prompt.trim() ? "#fff" : tm.textDimmed,
-                      cursor: prompt.trim() ? "pointer" : "not-allowed",
+                      padding: "8px 18px",
+                      borderRadius: 9,
+                      background: isPromptFilled
+                        ? sendHovered ? tm.sendBtnHover : tm.accent
+                        : "transparent",
+                      border: `1.5px solid ${isPromptFilled ? "transparent" : tm.accentBorder}`,
+                      color: isPromptFilled ? "#fff" : tm.textDimmed,
+                      cursor: isPromptFilled ? "pointer" : "not-allowed",
                       fontSize: 13,
-                      fontWeight: 500,
-                      transition:
-                        "background 0.15s, border-color 0.15s, color 0.15s",
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      transition: "background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s",
+                      transform: isPromptFilled && sendHovered ? "translateY(-1px)" : "none",
+                      boxShadow: isPromptFilled
+                        ? sendHovered
+                          ? `0 4px 20px ${tm.accentShadow}`
+                          : `0 2px 12px ${tm.logoContainerShadow}`
+                        : "none",
                     }}
                   >
-                    <Send size={13} />
+                    <Send size={13} style={{ marginRight: 1 }} />
                     Send
                   </button>
                 </div>
@@ -673,17 +751,19 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.28 }}
+            transition={{ duration: 0.5, delay: 0.34 }}
             style={{ width: "100%" }}
           >
             <p
               style={{
-                fontSize: 11,
-                color: tm.textDimmed,
-                marginBottom: 12,
-                letterSpacing: "0.08em",
+                fontSize: 10.5,
+                color: tm.sectionLabel,
+                marginBottom: 14,
+                letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 textAlign: "center",
+                fontWeight: 600,
+                transition: "color 0.3s",
               }}
             >
               Suggested prompts
@@ -691,90 +771,39 @@ export default function HomePage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(208px, 1fr))",
                 gap: 10,
               }}
             >
-              {SUGGESTIONS.map(({ icon: Icon, label, prompt: p }, i) => (
-                <motion.button
+              {SUGGESTIONS.map(({ icon, label, prompt: p }, i) => (
+                <PromptCard
                   key={label}
+                  icon={icon}
+                  label={label}
+                  tm={tm}
+                  delay={0.38 + i * 0.05}
                   onClick={() => handleSuggestion(p)}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.32 + i * 0.05, duration: 0.3 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 10,
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    background: tm.glassPanelBg,
-                    border: `1px solid ${tm.border}`,
-                    color: tm.textSecondary,
-                    cursor: "pointer",
-                    fontSize: 13,
-                    textAlign: "left",
-                    backdropFilter: "blur(8px)",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor =
-                      tm.accentBorder;
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      tm.accentBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor =
-                      tm.border;
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      tm.glassPanelBg;
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 7,
-                      background: tm.accentBg,
-                      border: `1px solid ${tm.accentBorder}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Icon size={13} style={{ color: tm.accent }} />
-                  </div>
-                  <span style={{ lineHeight: 1.45, paddingTop: 4 }}>
-                    {label}
-                  </span>
-                </motion.button>
+                />
               ))}
             </div>
           </motion.div>
         </div>
       </main>
 
-      {/* Responsive sidebar styles */}
+      {/* Responsive sidebar */}
       <style>{`
-        /* Tablet: collapse sidebar to icon-only rail */
-        @media (max-width: 900px) {
+        @media (max-width: 960px) {
           .vg-home-sidebar {
-            width: 56px !important;
-            min-width: 56px !important;
-            max-width: 56px !important;
+            width: 58px !important;
+            min-width: 58px !important;
+            max-width: 58px !important;
           }
-          .vg-home-sidebar .vg-sidebar-label {
-            display: none !important;
-          }
+          .vg-home-sidebar .vg-sidebar-label { display: none !important; }
         }
-        /* Mobile: hide sidebar entirely */
         @media (max-width: 480px) {
-          .vg-home-sidebar {
-            display: none !important;
-          }
+          .vg-home-sidebar { display: none !important; }
         }
+        textarea::placeholder { color: inherit; opacity: 0.38; }
       `}</style>
     </div>
   );

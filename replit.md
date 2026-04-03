@@ -76,6 +76,10 @@ The workspace-ide layout follows the Replit reference design with a single task 
 - `src/components/panels/task-console.tsx` — Main task surface with state-aware glow based on viewing task status
 - `src/store/use-ide-store.ts` — `mainView: MainView` state ('editor' | 'board') + `setMainView` action
 
+## Shared Design System
+
+- **`artifacts/workspace-ide/src/lib/theme.ts`** — Canonical shared theme module. Exports `VGTheme` type and `darkTheme` / `lightTheme` objects used by both `home.tsx` and `workspace.tsx`. All visual design tokens live here: backgrounds, surfaces, borders, text, accent colors, shadows, gradients, and atmospheric effects. Adding new themes or tokens should happen in this single file.
+
 ## Artifacts
 
 - `workspace-ide`: Preview at `/` (port 5173)

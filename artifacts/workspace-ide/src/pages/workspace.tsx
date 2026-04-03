@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import cobraTechLogo from "../assets/design2-cobra-tech.png";
+import { type VGTheme, darkTheme, lightTheme } from '@/lib/theme';
 import {
   LayoutGrid,
   Settings,
@@ -376,53 +377,7 @@ const fileRightClickItems = [
   { icon: Trash2,         label: "Delete",                 danger: true  },
 ];
 
-type Theme = {
-  bgBase: string; bgSurface: string; bgPanel: string; bgInput: string;
-  border: string; borderLight: string;
-  textPrimary: string; textSecondary: string; textMuted: string; textDimmed: string;
-  accent: string; accentBg: string; accentBorder: string; accentText: string;
-  gridColor: string; glowColor: string;
-  navHover: string; itemHover: string;
-  connectedBg: string; connectedBorder: string;
-  sectionLabel: string;
-  glassMesh: string;
-  glassPanelBg: string; glassPanelBorder: string;
-  inputPanelShadow: string;
-  logoContainerBg: string; logoContainerBorder: string; logoContainerShadow: string;
-  sidebarHeaderBg: string; sidebarHeaderGlow: string;
-};
-
-const darkTheme: Theme = {
-  bgBase: "#05080d", bgSurface: "#080c14", bgPanel: "#0b1019", bgInput: "#070a12",
-  border: "#1a1428", borderLight: "#231a38",
-  textPrimary: "#FFFFFF", textSecondary: "#c4b8e0", textMuted: "#9080c0", textDimmed: "#6b5890",
-  accent: "#8A2BE2", accentBg: "rgba(138,43,226,0.12)", accentBorder: "rgba(138,43,226,0.32)", accentText: "#c084fc",
-  gridColor: "rgba(138,43,226,0.03)", glowColor: "rgba(138,43,226,0.07)",
-  navHover: "rgba(255,255,255,0.05)", itemHover: "rgba(255,255,255,0.04)",
-  connectedBg: "rgba(138,43,226,0.1)", connectedBorder: "rgba(138,43,226,0.35)",
-  sectionLabel: "#8070b0",
-  glassMesh: `radial-gradient(ellipse 900px 600px at 15% 10%, rgba(138,43,226,0.16) 0%, transparent 60%),radial-gradient(ellipse 700px 500px at 85% 20%, rgba(168,85,247,0.09) 0%, transparent 55%),radial-gradient(ellipse 600px 700px at 70% 80%, rgba(138,43,226,0.12) 0%, transparent 60%),radial-gradient(ellipse 500px 400px at 10% 85%, rgba(110,30,190,0.08) 0%, transparent 55%)`,
-  glassPanelBg: "rgba(8,12,20,0.75)", glassPanelBorder: "rgba(138,43,226,0.25)",
-  inputPanelShadow: "0 0 0 1px rgba(138,43,226,0.08), 0 4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
-  logoContainerBg: "rgba(138,43,226,0.12)", logoContainerBorder: "rgba(138,43,226,0.32)", logoContainerShadow: "0 0 14px rgba(138,43,226,0.25)",
-  sidebarHeaderBg: "linear-gradient(90deg, #0a0610 0%, #05080d 100%)", sidebarHeaderGlow: "radial-gradient(ellipse 60% 100% at 0% 50%, rgba(138,43,226,0.12) 0%, transparent 70%)",
-};
-
-const lightTheme: Theme = {
-  bgBase: "#f5f2fb", bgSurface: "#f9f7fe", bgPanel: "#ffffff", bgInput: "#ede9fc",
-  border: "#ccc0e8", borderLight: "#ddd6f5",
-  textPrimary: "#0d0520", textSecondary: "#2d1a5a", textMuted: "#6b5b9e", textDimmed: "#7b6aaa",
-  accent: "#7c3aed", accentBg: "rgba(124,58,237,0.09)", accentBorder: "rgba(124,58,237,0.28)", accentText: "#6d28d9",
-  gridColor: "rgba(124,58,237,0.05)", glowColor: "rgba(124,58,237,0.04)",
-  navHover: "rgba(0,0,0,0.04)", itemHover: "rgba(0,0,0,0.03)",
-  connectedBg: "rgba(124,58,237,0.1)", connectedBorder: "rgba(124,58,237,0.3)",
-  sectionLabel: "#6b5b9e",
-  glassMesh: `radial-gradient(ellipse 900px 600px at 15% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),radial-gradient(ellipse 700px 500px at 85% 20%, rgba(168,85,247,0.08) 0%, transparent 55%),radial-gradient(ellipse 600px 700px at 70% 80%, rgba(124,58,237,0.10) 0%, transparent 60%),radial-gradient(ellipse 500px 400px at 10% 85%, rgba(100,40,200,0.07) 0%, transparent 55%)`,
-  glassPanelBg: "rgba(255,255,255,0.75)", glassPanelBorder: "rgba(124,58,237,0.18)",
-  inputPanelShadow: "0 2px 20px rgba(124,58,237,0.1), inset 0 1px 0 rgba(255,255,255,0.9)",
-  logoContainerBg: "rgba(124,58,237,0.08)", logoContainerBorder: "rgba(124,58,237,0.22)", logoContainerShadow: "0 0 8px rgba(124,58,237,0.12)",
-  sidebarHeaderBg: "linear-gradient(90deg, #f0ebfc 0%, #f5f2fb 100%)", sidebarHeaderGlow: "radial-gradient(ellipse 60% 100% at 0% 50%, rgba(124,58,237,0.08) 0%, transparent 70%)",
-};
+type Theme = VGTheme;
 
 const MIN_W = 48;
 const MAX_W = 280;
