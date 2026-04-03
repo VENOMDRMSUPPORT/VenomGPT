@@ -486,12 +486,12 @@ export default function HomePage() {
               alignItems: "center",
               justifyContent: "center",
               filter: isDark
-                ? "drop-shadow(0 0 6px rgba(255,255,255,0.55)) drop-shadow(0 0 14px rgba(255,255,255,0.25))"
+                ? "drop-shadow(0 0 4px rgba(255,255,255,0.35)) drop-shadow(0 0 10px rgba(255,255,255,0.12))"
                 : "none",
               transition: "filter 0.3s",
             }}
           >
-            <VenomLogo size={38} />
+            <VenomLogo size={48} />
           </div>
           <div className="vg-sidebar-label" style={{ minWidth: 0, position: "relative" }}>
             <div
