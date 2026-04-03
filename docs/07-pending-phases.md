@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document lists pending and deferred work areas. Backend trust phases and UI surfaces that are effectively closed are not listed here as upcoming work. The list reflects the genuine current open areas after Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), and the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), not historical priorities.
+This document lists pending and deferred work areas. Backend trust phases and UI surfaces that are effectively closed are not listed here as upcoming work. The list reflects the genuine current open areas after Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), not historical priorities.
 
 ---
 
@@ -43,6 +43,7 @@ The following areas were previously pending and are now done. They should not re
 - Per-file Apply/Discard, Staging Badges, Checkpoint History, Per-file Diff View (P3): `POST /api/agent/tasks/:taskId/apply-file`, `/discard-file`; per-file buttons in Output panel; `GET /api/agent/tasks/:taskId/checkpoint-history`; staging badges; inline unified diff viewer with `+{linesAdded}` / `-{linesRemoved}` per staged file
 - Runtime Lifecycle Depth (P4): `RuntimeLifecycleRecord`, `captureEnhancedSnapshot()`, `buildRuntimeLifecycleRecord()`; task-start/post-apply snapshots; proactive stale detection (`isStaleAfterApply`); process linkage; `TaskEvidence.runtimeLifecycle` persisted in `history.json`; Runtime Lifecycle section in Evidence Panel (`RuntimeLifecycleBlock`)
 - Provider-Layer Reset (Phases 0–2, Tasks #18–#22): damage assessment and freeze (Phase 0); `ProviderContract.ts`, `providerRouter.ts`, `ProviderStateStore.ts`, `ModelRegistry.ts` skeleton (Phase 1); `ZaiDriver.ts` implemented and wired, Z.AI execution through new router confirmed (Phase 2); Codex-specific state removed from `providerRegistry.ts`; `codexAuth.ts` unmounted; `modelAdapter.ts` retained as documented temporary shim; repo cleaned
+- Backend Closeout Pass: `routes/agentContinuation.ts` extracted from `agent.ts` (continuation/recovery routes — `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`); `agent.ts` reduced from 1905 lines to 993 lines; 31 automated tests added and passing (`src/tests/health.test.ts`, `responseNormalizer.test.ts`, `safety.test.ts`); TypeScript clean (0 errors) post-extraction
 
 ---
 

@@ -42,7 +42,8 @@ Sequencing is critical and correct: history must load before checkpoint recovery
 | workspace.ts | GET/POST /workspace |
 | projects.ts | GET/POST/DELETE/PATCH /projects, POST /projects/:name/select |
 | files.ts | GET/POST/DELETE /files/* (list, read, write, delete, rename, mkdir, download) |
-| agent.ts | /agent/tasks — full task lifecycle, approval gates, continuation |
+| agent.ts | /agent/tasks — core task lifecycle, approval gates (continuation/recovery extracted to agentContinuation.ts) |
+| agentContinuation.ts | /agent/tasks/:id/recovery-options, /retry-verify, /continue-partial, /recheck-runtime |
 | settings.ts | GET/PATCH /settings, POST /settings/reset, DELETE /settings/history |
 | checkpoint.ts | /agent/tasks/:id/checkpoint, apply, discard, apply-file, discard-file, checkpoint-history |
 | runtime.ts | GET /runtime/status |
@@ -52,9 +53,11 @@ Sequencing is critical and correct: history must load before checkpoint recovery
 
 **Not mounted:** `routes/codexAuth.ts` — explicitly marked DEFERRED, @ts-nocheck applied, absent from routes/index.ts. Confirmed by direct inspection.
 
-### Agent Route Surface (routes/agent.ts — 1905 lines)
+### Agent Route Surface (routes/agent.ts — 993 lines + routes/agentContinuation.ts — 871 lines)
 
-All routes trace to active lib modules:
+Continuation/recovery routes were extracted from `agent.ts` into `agentContinuation.ts` during the backend closeout pass, reducing `agent.ts` from 1905 lines to 993 lines. Both modules are wired in `routes/index.ts`. All routes trace to active lib modules:
+
+**routes/agent.ts** — core task lifecycle routes:
 
 | Route | Wired to |
 |-------|---------|
@@ -75,6 +78,11 @@ All routes trace to active lib modules:
 | POST /agent/tasks/:id/approve-selective | validateSelectiveSafety → lane-scoped approval |
 | POST /agent/tasks/:id/operator-override | validateLaneSteering → state.operatorOverride |
 | POST /agent/tasks/:id/delete | deleteTask (sessionManager.ts) |
+
+**routes/agentContinuation.ts** — continuation/recovery routes (extracted from agent.ts in closeout pass):
+
+| Route | Wired to |
+|-------|---------|
 | GET /agent/tasks/:id/recovery-options | stale analysis from taskEvidence.runtimeLifecycle |
 | POST /agent/tasks/:id/retry-verify | runAgentTask with verification prompt |
 | POST /agent/tasks/:id/continue-partial | structured continuation via continuationChain.ts OR unstructured fallback |
@@ -253,7 +261,7 @@ These deletions were committed by the platform as part of the task initializatio
 
 ### (a) Route Wiring Verification
 
-All 11 route modules confirmed mounted in `routes/index.ts`. All 22 agent route handlers traced to active lib functions. All orchestrator modules traced to at least one active importer.
+All 12 route modules confirmed mounted in `routes/index.ts` (11 original + `agentContinuation.ts` added in the closeout pass). All agent route handlers traced to active lib functions. All orchestrator modules traced to at least one active importer.
 
 **Core surfaces intact:**
 - ✓ Agent tasks — POST/GET /agent/tasks, all task lifecycle endpoints
@@ -299,7 +307,13 @@ No errors, no warnings, no anomalous entries. Clean startup confirmed.
 
 ### (d) Tests
 
-No automated test suite exists in the api-server package. Manual code path tracing performed. This is a known gap (see Future Improvement Plan).
+**31 automated tests pass** in the api-server package. The test suite was added during the backend closeout pass (Task #2 — backend closeout). Three test files cover:
+
+- `src/tests/health.test.ts` — HTTP 200, `{ status: "ok" }` response shape, correct Content-Type, 404 for unknown routes
+- `src/tests/responseNormalizer.test.ts` — all extraction strategies (json_block, first_object, json_repaired), conversational detection, well-formed action objects, invalid-JSON handling
+- `src/tests/safety.test.ts` — path traversal blocking, absolute path rejection, URL-encoded traversal, windows backslash normalization, shell command blocking
+
+All 31 tests pass cleanly (`pnpm run test` from `artifacts/api-server`). This is the confirmed regression protection baseline.
 
 ### What Could Not Be Verified
 
@@ -311,16 +325,21 @@ No automated test suite exists in the api-server package. Manual code path traci
 
 ## Future Backend Improvement Plan
 
-**NOT IMPLEMENTED — roadmap for future work only**
+### Phase 1 — Testing Infrastructure — PARTIALLY COMPLETED (Backend Closeout Pass)
 
-### Phase 1 — Testing Infrastructure (High priority, Low risk)
-1. Integration tests: POST /agent/tasks happy path → status → cancel
-2. Unit tests for actionRouter.gateAction (all 9 gate paths)
-3. Unit tests for continuationChain.verifyFromCheckpoint (all 3 return paths)
-4. Unit tests for taskRouter.routeTask (all 10 categories)
-5. Startup smoke test: server.listen → GET /healthz → assert 200
-6. **Risk:** Low — tests don't change behavior  
-7. **Why:** No automated verification means regressions are invisible until runtime
+A 31-test automated baseline was added in the backend closeout pass:
+- `src/tests/health.test.ts` — GET /healthz smoke test (HTTP 200, response shape, Content-Type, 404 for unknown routes) — **confirms startup smoke test ✓**
+- `src/tests/responseNormalizer.test.ts` — all extraction strategies, conversational detection, action object validation
+- `src/tests/safety.test.ts` — path traversal, absolute path rejection, URL-encoded traversal, shell command blocking
+
+Still open from Phase 1 (not yet covered by the 31-test baseline):
+- Integration tests: POST /agent/tasks happy path → status → cancel
+- Unit tests for actionRouter.gateAction (all 9 gate paths)
+- Unit tests for continuationChain.verifyFromCheckpoint (all 3 return paths)
+- Unit tests for taskRouter.routeTask (all 10 categories)
+
+**Risk:** Low — tests don't change behavior  
+**Why:** The 31-test baseline provides regression protection for health, safety, and response normalization. Deeper integration test coverage remains open.
 
 ### Phase 2 — Persistence Hardening (Medium priority, Medium risk)
 1. Transactional writes to taskPersistence (write to tmp → atomic rename)
@@ -329,12 +348,13 @@ No automated test suite exists in the api-server package. Manual code path traci
 4. **Risk:** Medium — changes write paths; must be careful not to break atomic guarantees
 5. **Why:** Server crash mid-write can corrupt history or checkpoint state
 
-### Phase 3 — Route Boundary Tightening (Medium priority, Low risk)
-1. Extract recovery-options endpoint from agent.ts → separate route module
-2. Extract continuation endpoints (continue-partial, retry-verify, recheck-runtime) from agent.ts
-3. agent.ts at 1905 lines is the largest single backend file; split at logical task-lifecycle boundaries
-4. **Risk:** Low — route registration behavior unchanged; just file organization
-5. **Why:** Large single-file routes are harder to audit and maintain independently
+### Phase 3 — Route Boundary Tightening — COMPLETED (Backend Closeout Pass)
+
+Continuation and recovery routes were extracted from `agent.ts` into `agentContinuation.ts` during the backend closeout pass:
+- `routes/agentContinuation.ts` (871 lines): contains `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`
+- `agent.ts` reduced from 1905 lines to 993 lines — a 912-line reduction
+- Both modules are mounted in `routes/index.ts`; route registration behavior is unchanged
+- TypeScript compiles clean (0 errors) post-extraction
 
 ### Phase 4 — Observability (Low priority, Low risk)
 1. Request ID correlation between HTTP request and WebSocket events
@@ -355,7 +375,7 @@ No automated test suite exists in the api-server package. Manual code path traci
 
 ## Remaining Risks
 
-1. **No automated test suite** — backend is clean at audit time, but regressions are undetected without tests. Phase 1 of the improvement plan addresses this.
+1. **Partial automated test coverage** — 31 tests pass covering health, safety, and response normalization. Deeper integration test coverage (agent task lifecycle, action gating, continuation chains) remains open. Phase 1 of the improvement plan (partially completed) addresses this.
 2. **In-memory task state not persistent across restarts** — agentLoop._liveRunState and _activeRunStates are process-lifetime only. Already handled by recoverInterruptedTasks but mid-run context (current step, live model conversation) is lost on crash.
 3. **30MB JSON body limit** — intentional for screenshot payloads, but creates attack surface if API is exposed without auth.
 4. **No authentication on any endpoint** — all operator surfaces (settings, history clear, provider issue injection via simulate-issue) are unauthenticated. Acceptable for local-only deployment; significant risk if exposed publicly.
@@ -371,7 +391,7 @@ The backend is in a stable, verifiable state:
 - TypeScript compilation: **clean (0 errors)**
 - Build: **clean (0 errors, 2.3MB bundle)**
 - Server startup: **clean (all recovery phases complete, WebSocket initialized, port bound)**
-- Route wiring: **all 11 route modules mounted, all core surfaces intact**
+- Route wiring: **all 12 route modules mounted, all core surfaces intact** (agentContinuation.ts wired in closeout pass)
 - Dead code: **zero orphaned files in any live runtime path**
 - Template-era contamination: **none found in any wired runtime path**
 - Deferred items: **correctly isolated (codexAuth.ts, openai-codex-auth/) — not contamination**

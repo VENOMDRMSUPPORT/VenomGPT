@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the confirmed current state of VenomGPT as of the closeout of Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), and the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup). It separates what is confirmed working, what is partially validated, what is still open, and what is intentionally deferred.
+This document describes the confirmed current state of VenomGPT as of the closeout of Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing). It separates what is confirmed working, what is partially validated, what is still open, and what is intentionally deferred.
 
 ---
 
@@ -74,6 +74,17 @@ This document describes the confirmed current state of VenomGPT as of the closeo
 **agentLoop Decomposition Pass 1**
 - `evidenceAssembler.ts` extracted: assembles and persists `TaskEvidence` at completion
 - `actionExecutor.ts` extracted: dispatches individual actions within the loop
+
+**Route Boundary Extraction (Backend Closeout Pass)**
+- `routes/agentContinuation.ts` (871 lines): continuation and recovery route module extracted from `agent.ts` — contains `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`
+- `routes/agent.ts` reduced from 1905 lines to 993 lines
+- Both modules mounted in `routes/index.ts`; route registration behavior unchanged
+- TypeScript compiles clean (0 errors) post-extraction
+
+**Automated Test Baseline (Backend Closeout Pass)**
+- 31 automated tests pass: `src/tests/health.test.ts` (GET /healthz smoke test), `responseNormalizer.test.ts` (all extraction strategies, conversational detection, action object parsing), `safety.test.ts` (path traversal, absolute path rejection, URL-encoded traversal, shell command blocking)
+- Run via `pnpm run test` from `artifacts/api-server`
+- This is the confirmed regression protection baseline; deeper integration test coverage remains open
 
 **Bounded Semi-Parallel Read Burst**
 - `readBurstExecutor.ts`: accepts `filesToRead` from the planning phase and dispatches all reads concurrently via `Promise.all`

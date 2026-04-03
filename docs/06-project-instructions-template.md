@@ -75,6 +75,8 @@ You are working on **VenomGPT**, a browser-based local AI coding workspace. The 
 - Checkpoint-Aware Continuation Chains (Phase 2): continuationChain.ts — continuation chain model; POST /agent/tasks/:taskId/resume-from-checkpoint (structured resume, distinct from retry-from-start); buildWhatRemains (grounded remaining-work model from original plan vs. confirmed-complete actions); validateCheckpointForResume (invalidation rules: checkpoint_applied_overwritten, checkpoint_discarded); continuation lineage (ancestryDepth, origin checkpoint ID) surfaced in evidence and replay endpoints
 - Operator Steering + Approval Workflows (Phase 3): POST /agent/tasks/:taskId/register-gate (approval gate, optionally scoped to laneIds); /approve, /deny, /approve-selective; run lifecycle phases: awaiting_approval, selectively_blocked, approval_denied, operator_overridden; validateLaneSteering (lane-safe pause/cancel); validateSelectiveSafety (no dangling dependencies in partial approvals); recovery affordances: resubmit_after_denial, view_approval_checkpoint
 - Verification-Orchestrated Execution (Phase 4): verification plan per lane (each lane carries own verification requirements as first-class execution graph participant); post-merge verification pass triggered on lane merge; runtime-aware rechecks (re-triggered by state changes: file applied, command run, lane merged); checkpoint-aware verification retries (re-verify from known checkpoint state); confidence shaping (aggregated evidence from multiple verification passes); failure-to-repair loops (failed verification triggers structured repair plan, not raw error)
+- Route extraction (Backend Closeout Pass): `routes/agentContinuation.ts` extracted from `agent.ts` containing `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`; `agent.ts` reduced from 1905 to 993 lines; both modules wired in `routes/index.ts`; TypeScript clean (0 errors)
+- Test scaffolding (Backend Closeout Pass): 31 automated tests added and passing — `src/tests/health.test.ts` (GET /healthz smoke), `responseNormalizer.test.ts` (all extraction strategies), `safety.test.ts` (path traversal, absolute paths, shell command blocking); run via `pnpm run test` from `artifacts/api-server`
 
 **Confirmed completed (frontend / product)**
 - Workspace layout overhaul: 2-panel flex (TaskConsole 300px + CodeEditor flex:1)
@@ -105,7 +107,7 @@ You are working on **VenomGPT**, a browser-based local AI coding workspace. The 
 - Product polish: settings page, task history UX
 
 **Backend maturity judgment**
-~97–98% toward serious Replit-style orchestration / execution trust / lifecycle maturity — **backend-wise only**. Not full Replit product parity. Not full premium product UI surface (next maturity arc). All four orchestration phases (Phases 1–4: parallel dispatch, continuation chains, operator steering / approval workflows, verification-orchestrated execution) are confirmed complete. P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view) and P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section) are confirmed complete.
+~97–98% toward serious Replit-style orchestration / execution trust / lifecycle maturity — **backend-wise only**. Not full Replit product parity. Not full premium product UI surface (next maturity arc). All four orchestration phases (Phases 1–4: parallel dispatch, continuation chains, operator steering / approval workflows, verification-orchestrated execution) are confirmed complete. P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view) and P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section) are confirmed complete. Backend Closeout Pass is confirmed complete: route extraction into `agentContinuation.ts`, `agent.ts` at 993 lines, 31 automated tests passing. **Frontend work is the explicit next direction.**
 
 ---
 
@@ -134,7 +136,8 @@ You are working on **VenomGPT**, a browser-based local AI coding workspace. The 
 - `lib/sessionManager.ts` — task storage, events, failure details
 - `lib/taskPersistence.ts` — ~/.venomgpt/history.json
 - `lib/wsServer.ts` — WebSocket broadcast (broadcastActionUpdate, broadcastLivePhase, action_updated events)
-- `routes/agent.ts` — task CRUD, evidence, replay, actions, capabilities, pause/resume/proceed-as-partial, recovery-options endpoints
+- `routes/agent.ts` — task CRUD, evidence, replay, actions, capabilities, pause/resume/proceed-as-partial (993 lines; reduced from 1905 in closeout pass)
+- `routes/agentContinuation.ts` — continuation/recovery endpoints: recovery-options, retry-verify, continue-partial, recheck-runtime (extracted from agent.ts in closeout pass)
 - `routes/checkpoint.ts` — checkpoint status, apply, discard endpoints
 
 ### Key files (frontend)

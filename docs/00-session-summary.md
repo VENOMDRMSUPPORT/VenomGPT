@@ -321,6 +321,26 @@ Final cleanup pass: removed test artifacts, corrected `.gitignore` entries, and 
 
 ---
 
+### Backend Closeout Pass (Task #2 — Docs Sync)
+
+After the provider-layer stabilization arc, a dedicated backend closeout pass was executed to bring `agent.ts`, the test suite, and the documentation in line with the confirmed repo truth.
+
+**Route extraction (`agent.ts` → `agentContinuation.ts`)**
+The four continuation and recovery routes (`recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`) were extracted from `agent.ts` into a new dedicated module `agentContinuation.ts`. Both modules are wired in `routes/index.ts`. `agent.ts` was reduced from 1905 lines to 993 lines (a 912-line reduction). `agentContinuation.ts` is 871 lines. TypeScript compiles clean (0 errors) post-extraction.
+
+**Test scaffolding — 31 automated tests added**
+Three test files were added under `src/tests/`:
+- `health.test.ts` — GET /healthz smoke test: HTTP 200, `{ status: "ok" }` shape, Content-Type, 404 for unknown routes
+- `responseNormalizer.test.ts` — all extraction strategies (json_block, first_object, json_repaired), conversational detection, well-formed action object parsing
+- `safety.test.ts` — path traversal blocking, absolute path rejection, URL-encoded traversal, windows backslash normalization, shell command blocking
+
+All 31 tests pass cleanly (`pnpm run test` from `artifacts/api-server`). This is the confirmed regression protection baseline. Deeper integration test coverage (agent task lifecycle, action gating, continuation chains) remains open.
+
+**Backend trust judgment post-closeout**
+The backend is **TRUSTED**. The closeout pass raised the automated verification baseline from zero to 31 passing tests. The route boundary is now cleaner (continuation concerns are isolated from core task-lifecycle concerns). No source behavior was changed; this was purely organization and test scaffolding. Frontend work can safely begin.
+
+---
+
 ## Current Project Position
 
 VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), and a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`)**.

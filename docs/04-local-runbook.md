@@ -2,7 +2,7 @@
 
 ## Overview
 
-This runbook covers verified local development procedures for VenomGPT. It reflects the current validated state through Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4, P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), and the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup): durable checkpoint/replay, runtime-aware verification, staged isolation, lifecycle maturity, live WebSocket action streaming, replay/evidence inspection UI, tool introspection, dependency classification groundwork, bounded semi-parallel read burst, runtime-impact signaling, active-run operator intervention (pause/resume/proceed-as-partial), Human-in-the-Loop recovery, parallel dispatch foundations, checkpoint-aware continuation chains, operator steering / approval workflows, verification-orchestrated execution, and a Z.A.I-only provider runtime with `providerRouter.ts` + `ZaiDriver.ts`. It does not leave outdated language implying these surfaces are unverified.
+This runbook covers verified local development procedures for VenomGPT. It reflects the current validated state through Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4, P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing): durable checkpoint/replay, runtime-aware verification, staged isolation, lifecycle maturity, live WebSocket action streaming, replay/evidence inspection UI, tool introspection, dependency classification groundwork, bounded semi-parallel read burst, runtime-impact signaling, active-run operator intervention (pause/resume/proceed-as-partial), Human-in-the-Loop recovery, parallel dispatch foundations, checkpoint-aware continuation chains, operator steering / approval workflows, verification-orchestrated execution, and a Z.A.I-only provider runtime with `providerRouter.ts` + `ZaiDriver.ts`. It does not leave outdated language implying these surfaces are unverified.
 
 ---
 
@@ -26,7 +26,7 @@ cp .env.example .env
 # Edit .env — set ZAI_API_KEY (required for local agent)
 
 # 3. Verify setup
-pnpm run test       # 37 automated safety + model config tests
+pnpm run test       # 31 automated safety + model config tests
 pnpm run typecheck  # TypeScript check across all packages
 ```
 
@@ -89,7 +89,7 @@ Run in this order after any non-trivial change:
 # 1. TypeScript clean
 pnpm run typecheck
 
-# 2. Safety + model config tests (37 checks)
+# 2. Safety + model config tests (31 checks)
 pnpm run test
 
 # 3. Full dev start + manual smoke
