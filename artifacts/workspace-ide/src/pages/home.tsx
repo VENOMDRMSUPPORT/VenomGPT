@@ -458,10 +458,12 @@ export default function HomePage() {
         {/* ── Branding block ── */}
         <div
           style={{
-            padding: "22px 16px 20px",
+            height: 46,
+            flexShrink: 0,
+            padding: "0 14px",
             display: "flex",
             alignItems: "center",
-            gap: 13,
+            gap: 11,
             borderBottom: `1px solid ${tm.sidebarDivider}`,
             position: "relative",
             overflow: "hidden",
@@ -491,7 +493,7 @@ export default function HomePage() {
               transition: "filter 0.3s",
             }}
           >
-            <VenomLogo size={48} />
+            <VenomLogo size={30} />
           </div>
           <div className="vg-sidebar-label" style={{ minWidth: 0, position: "relative" }}>
             <div
