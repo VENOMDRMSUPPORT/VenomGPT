@@ -509,20 +509,6 @@ export default function HomePage() {
               <span style={{ color: tm.textPrimary }}>VENOM</span>
               <span style={{ color: tm.accent, fontWeight: 300, transition: "color 0.3s" }}>GPT</span>
             </div>
-            <div
-              style={{
-                fontSize: 9.5,
-                fontFamily: "monospace",
-                color: tm.textMuted,
-                letterSpacing: "0.28em",
-                textTransform: "uppercase",
-                marginTop: 4,
-                whiteSpace: "nowrap",
-                transition: "color 0.3s",
-              }}
-            >
-              Cyber Intelligence
-            </div>
           </div>
         </div>
 
