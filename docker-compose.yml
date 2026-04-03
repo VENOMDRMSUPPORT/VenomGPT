@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  venomgpt:
+    build: .
+    container_name: venomgpt
+    ports:
+      - "3001:3001"  # API Server
+      - "5173:5173"  # Frontend IDE
+    environment:
+      - ZAI_API_KEY=${ZAI_API_KEY}
+      - ZAI_BASE_URL=${ZAI_BASE_URL:-https://api.z.ai/api/coding/paas/v4/}
+      - API_PORT=3001
+      - IDE_PORT=5173
+      - SANDBOX_PORT=5174
+      - BASE_PATH=/
+      - VITE_API_PORT=3001
+      - NODE_ENV=development
+    volumes:
+      # Mount your workspace directory
+      - ./workspace:/workspace:rw
+      # Persist agent data
+      - venomgpt-data:/home/node/.venomgpt
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/workspace"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  venomgpt-data:
+    driver: local

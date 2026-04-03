@@ -22,6 +22,17 @@ Open **http://localhost:5173** in your browser. Enter a workspace directory path
 
 ---
 
+## Running on External Platforms
+
+For GitHub Codespaces, Gitpod, or other cloud IDEs, see [docs/EXTERNAL-PLATFORMS.md](docs/EXTERNAL-PLATFORMS.md) for detailed instructions.
+
+**Quick start for external platforms:**
+```bash
+./start-external.sh
+```
+
+---
+
 ## Requirements
 
 - **Node.js 20+**

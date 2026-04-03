@@ -30,6 +30,17 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+# Step 1: Install dependencies if node_modules is missing
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "test -d node_modules || pnpm install"
+
+# Step 2: Build the project (required for mockup-sandbox)
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=5174 BASE_PATH=/ pnpm run build"
+
+# Step 3: Start both services
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pnpm run dev"
