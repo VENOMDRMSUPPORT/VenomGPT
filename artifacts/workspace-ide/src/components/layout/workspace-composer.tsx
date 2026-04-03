@@ -1,0 +1,291 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Play, Square, ImageIcon, X, Sparkles, AlignLeft, AlertCircle } from 'lucide-react';
+import { useStartAgentTask } from '@workspace/api-client-react';
+import { getListAgentTasksQueryKey } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useIdeStore } from '@/store/use-ide-store';
+import { compressImage } from '@/lib/imageUtils';
+
+const MAX_IMAGES = 5;
+const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+
+export function WorkspaceComposer() {
+  const queryClient = useQueryClient();
+
+  const activeTaskId           = useIdeStore(s => s.activeTaskId);
+  const startActiveTask        = useIdeStore(s => s.startActiveTask);
+  const clearActiveTask        = useIdeStore(s => s.clearActiveTask);
+  const pendingNewTaskPrompt   = useIdeStore(s => s.pendingNewTaskPrompt);
+  const setPendingNewTaskPrompt = useIdeStore(s => s.setPendingNewTaskPrompt);
+  const setPendingSubmitPrompt = useIdeStore(s => s.setPendingSubmitPrompt);
+
+  // isRunning is a derived value — true whenever there's an active task
+  const isRunning = activeTaskId !== null;
+
+  const [prompt, setPrompt]               = useState('');
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [imageError, setImageError]       = useState<string | null>(null);
+  const [submitError, setSubmitError]     = useState<string | null>(null);
+  const [isFocused, setIsFocused]         = useState(false);
+  const [planMode, setPlanMode]           = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingPromptRef = useRef<string>('');
+
+  const { mutate: startTask, isPending } = useStartAgentTask({
+    mutation: {
+      onSuccess: (data: { taskId: string }) => {
+        startActiveTask(data.taskId, pendingPromptRef.current);
+        setPendingSubmitPrompt(null);
+        setPrompt('');
+        setAttachedImages([]);
+        setImageError(null);
+        setSubmitError(null);
+        queryClient.invalidateQueries({ queryKey: getListAgentTasksQueryKey() });
+      },
+      onError: (err: unknown) => {
+        setPendingSubmitPrompt(null);
+        const body = (err as { response?: { data?: { error?: string; message?: string } } })?.response?.data;
+        setSubmitError(body?.message ?? 'Task submission failed. Please try again.');
+      },
+    },
+  });
+
+  const disabled = isPending || isRunning;
+  const canSubmit = prompt.trim().length > 0 && !disabled;
+
+  const persistAsset = useCallback(async (content: string, filename: string) => {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+    const isDataUrl = content.startsWith('data:');
+    try {
+      await fetch('/api/files/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: `attached_assets/${ts}_${filename}`, content, ...(isDataUrl ? { encoding: 'dataurl' } : {}) }),
+      });
+    } catch { /* silent */ }
+  }, []);
+
+  const persistPrompt = useCallback(async (promptText: string) => {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
+    try {
+      await fetch('/api/files/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: `attached_assets/${ts}_prompt.md`, content: promptText }),
+      });
+    } catch { /* silent */ }
+  }, []);
+
+  const handleSubmit = useCallback((promptText: string, images: string[], plan: boolean) => {
+    const planPrefix = plan ? 'Think step-by-step and write a thorough plan before implementing anything. Show the plan first, then proceed.\n\n' : '';
+    const fullPrompt = planPrefix + promptText;
+    pendingPromptRef.current = promptText;
+    setPendingSubmitPrompt(promptText);
+    const payload: { prompt: string; images?: string[] } = { prompt: fullPrompt };
+    if (images.length > 0) payload.images = images;
+    void persistPrompt(fullPrompt);
+    startTask({ data: payload });
+  }, [startTask, persistPrompt, setPendingSubmitPrompt]);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    const totalBytes = attachedImages.reduce((s, i) => s + i.length, 0);
+    if (attachedImages.length > 0 && totalBytes > 25 * 1024 * 1024) {
+      setImageError('Total image payload is too large. Remove some images and try again.');
+      return;
+    }
+    handleSubmit(prompt.trim(), attachedImages, planMode);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (canSubmit) handleFormSubmit(e as unknown as React.FormEvent);
+    }
+  };
+
+  const handleCancel = useCallback(async () => {
+    if (!activeTaskId) return;
+    try {
+      await fetch(`/api/agent/tasks/${activeTaskId}/cancel`, { method: 'POST' });
+      clearActiveTask();
+      queryClient.invalidateQueries({ queryKey: getListAgentTasksQueryKey() });
+    } catch { /* silent */ }
+  }, [activeTaskId, clearActiveTask, queryClient]);
+
+  const addImages = useCallback(async (files: File[]) => {
+    setImageError(null);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+    const remaining = MAX_IMAGES - attachedImages.length;
+    const toProcess = imageFiles.slice(0, remaining);
+    if (imageFiles.length > remaining) setImageError(`Max ${MAX_IMAGES} images. ${imageFiles.length - remaining} skipped.`);
+    const results: string[] = [];
+    for (const file of toProcess) {
+      if (file.size > MAX_SOURCE_BYTES) { setImageError(`"${file.name}" too large.`); continue; }
+      try {
+        const compressed = await compressImage(file);
+        results.push(compressed);
+        const originalName = file.name && file.name !== 'image.png' && file.name !== 'blob'
+          ? file.name : 'pasted_image.jpg';
+        void persistAsset(compressed, originalName);
+      } catch (err) { setImageError(err instanceof Error ? err.message : 'Could not process image.'); }
+    }
+    if (results.length > 0) setAttachedImages(prev => [...prev, ...results]);
+  }, [attachedImages.length, persistAsset]);
+
+  const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItems = items.filter(i => i.kind === 'file' && i.type.startsWith('image/'));
+    if (!imageItems.length) return;
+    e.preventDefault();
+    await addImages(imageItems.map(i => i.getAsFile()).filter(Boolean) as File[]);
+  }, [addImages]);
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await addImages(Array.from(e.target.files ?? []));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [addImages]);
+
+  const removeImage = (idx: number) => {
+    setAttachedImages(prev => prev.filter((_, i) => i !== idx));
+    setImageError(null);
+  };
+
+  // Auto-submit prompt forwarded from the board ("New task" flow)
+  useEffect(() => {
+    if (!pendingNewTaskPrompt || disabled) return;
+    handleSubmit(pendingNewTaskPrompt, [], false);
+    setPendingNewTaskPrompt(null);
+  }, [pendingNewTaskPrompt, disabled, handleSubmit, setPendingNewTaskPrompt]);
+
+  return (
+    <div
+      className="workspace-composer shrink-0 border-t border-panel-border px-3 pt-2.5 pb-3"
+      style={{ background: 'rgba(10, 6, 16, 0.92)' }}
+    >
+      <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+
+      <form onSubmit={handleFormSubmit}>
+        <div
+          className={`rounded-xl border transition-all duration-150 overflow-hidden bg-background ${
+            isFocused ? 'border-primary/50 ring-1 ring-primary/15' : 'border-panel-border/60 hover:border-panel-border'
+          } ${disabled ? 'opacity-60' : ''}`}
+        >
+          {/* Image chips */}
+          {attachedImages.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 px-2.5 pt-2 pb-1">
+              {attachedImages.map((src, i) => (
+                <div key={i} className="flex items-center gap-1.5 bg-panel border border-panel-border/60 rounded-lg px-1.5 py-0.5 text-[11px] group">
+                  <img src={src} alt="" className="w-3.5 h-3.5 rounded object-cover" />
+                  <span className="text-muted-foreground font-mono max-w-[60px] truncate">img-{i + 1}</span>
+                  <button type="button" onClick={() => removeImage(i)} className="text-muted-foreground/40 hover:text-foreground">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Textarea */}
+          <textarea
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={isRunning ? 'Agent is working…' : 'Make, test, iterate...'}
+            className="w-full min-h-[72px] max-h-[140px] bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none resize-none leading-relaxed"
+            disabled={disabled}
+          />
+
+          {/* Control bar */}
+          <div className="flex items-center gap-0.5 px-2 pb-1.5 pt-0.5 border-t border-panel-border/20">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || attachedImages.length >= MAX_IMAGES}
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-panel-border/40 disabled:opacity-30 transition-all"
+              title="Attach image"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-panel-border/40 transition-all"
+              title="Markdown supported"
+              tabIndex={-1}
+            >
+              <AlignLeft className="w-3.5 h-3.5" />
+            </button>
+
+            <div className="flex-1" />
+
+            <button
+              type="button"
+              onClick={() => setPlanMode(p => !p)}
+              disabled={disabled}
+              className={`h-7 px-2 rounded-lg text-[11px] font-medium flex items-center gap-1 transition-all border ${
+                planMode
+                  ? 'text-primary bg-primary/15 border-primary/30'
+                  : 'text-muted-foreground/50 hover:text-foreground hover:bg-panel-border/40 border-transparent'
+              } disabled:opacity-40`}
+              title="Plan mode"
+            >
+              <Sparkles className="w-3 h-3" />
+              Plan
+            </button>
+
+            <div className="w-px h-4 bg-panel-border/40 mx-1.5" />
+
+            {isRunning && (
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-all"
+                title="Stop task"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+              </button>
+            )}
+
+            {!isRunning && (
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/85 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                title="Run task (Enter) · Shift+Enter for new line"
+              >
+                <Play className="w-4 h-4 fill-current" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {imageError && (
+          <p className="mt-1.5 text-[11px] text-amber-400 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3 shrink-0" />{imageError}
+          </p>
+        )}
+
+        {submitError && (
+          <div className="mt-1.5 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
+            <AlertCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+            <span className="text-[11px] text-red-400 leading-relaxed flex-1">{submitError}</span>
+            <button
+              type="button"
+              onClick={() => setSubmitError(null)}
+              className="text-red-400/50 hover:text-red-400 transition-colors shrink-0"
+              title="Dismiss"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}

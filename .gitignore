@@ -1,0 +1,71 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/
+
+# User projects — managed at runtime, not tracked in source control
+/projects/
+
+# Pasted context / AI instruction dump files — not product code
+/attached_assets/Pasted-*.txt
+
+# Test verification screenshots (past task pass artifacts)
+screenshots/
+
+# Browser-capture images in attached_assets — specific patterns only
+# (broad *.png not used to avoid suppressing legitimate assets)
+attached_assets/targeted_element_*
+attached_assets/Screenshot_*
+attached_assets/192.168.*
+attached_assets/image_*.png
+
+# Stale lane-routing test output files
+artifacts/**/verify_test.txt
+
+# Note: projects/ff/attached_assets/ is a Replit-managed prompt/history folder
+# and is already covered by the /projects/ ignore rule above.
