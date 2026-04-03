@@ -67,5 +67,8 @@ attached_assets/image_*.png
 # Stale lane-routing test output files
 artifacts/**/verify_test.txt
 
+# Local environment secrets
+.env
+
 # Note: projects/ff/attached_assets/ is a Replit-managed prompt/history folder
 # and is already covered by the /projects/ ignore rule above.

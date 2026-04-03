@@ -41,7 +41,7 @@ const PROFILE_CONFIGS: Record<TaskCategory, Omit<ExecutionProfile, "category">> 
   /**
    * server_check: dedicated profile for tasks that explicitly verify whether a
    * running server is healthy (e.g. "check if the server is running", "is the
-   * dev server up", "verify the API is live on port 8080").
+   * dev server up", "verify the API is live on port 3001").
    *
    * requiresRuntimeProof=true: the done gate unconditionally enforces that the
    * ledger reaches 'runtime_confirmed' quality before completion. The agent MUST

@@ -8,7 +8,7 @@ VenomGPT is a browser-based personal AI coding assistant that executes end-to-en
 
 This is a **pnpm monorepo** with two primary applications:
 
-- **`artifacts/api-server/`** — Express backend API (port 8080). Handles the agent loop, file system operations (sandboxed), shell command execution, and WebSocket interface for real-time updates.
+- **`artifacts/api-server/`** — Express backend API (port 3001). Handles the agent loop, file system operations (sandboxed), shell command execution, and WebSocket interface for real-time updates.
 - **`artifacts/workspace-ide/`** — React + Vite frontend (port 5173). Monaco-powered code editor and transcript console.
 - **`artifacts/mockup-sandbox/`** — Secondary frontend for UI prototyping.
 - **`lib/`** — Shared libraries (api-spec, api-client-react, api-zod, db).
@@ -29,7 +29,7 @@ This is a **pnpm monorepo** with two primary applications:
 Endpoint and model selection are fully automatic — `ZAI_BASE_URL`, `ZAI_MODEL`, and `ZAI_VISION_MODEL` are NOT supported and have no effect.
 
 ### Ports
-- API server: **8080**
+- API server: **3001**
 - Frontend (Vite): **5173**
 
 ## Running the Project
@@ -40,8 +40,8 @@ pnpm run dev
 ```
 
 The workflow starts both services concurrently:
-- API: `cross-env PORT=8080 pnpm --filter @workspace/api-server run dev`
-- IDE: `cross-env PORT=5173 BASE_PATH=/ VITE_API_PORT=8080 pnpm --filter @workspace/workspace-ide run dev`
+- API: `cross-env PORT=3001 pnpm --filter @workspace/api-server run dev`
+- IDE: `cross-env PORT=5173 BASE_PATH=/ VITE_API_PORT=3001 pnpm --filter @workspace/workspace-ide run dev`
 
 ## Agent Safety Features
 
@@ -83,5 +83,5 @@ The workspace-ide layout follows the Replit reference design with a single task 
 ## Artifacts
 
 - `workspace-ide`: Preview at `/` (port 5173)
-- `api-server`: API at `/api` (port 8080)
+- `api-server`: API at `/api` (port 3001)
 - `mockup-sandbox`: Preview at `/__mockup` (port 8081)

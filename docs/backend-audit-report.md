@@ -300,7 +300,7 @@ Loaded task history  count: 0
   Anthropic lane: https://api.z.ai/api/anthropic
   Default routing: agentic/coding → GLM-5.1 (Anthropic lane)
 WebSocket server initialized at /api/ws
-Server listening  port: 8080
+Server listening  port: 3001
 ```
 
 No errors, no warnings, no anomalous entries. Clean startup confirmed.

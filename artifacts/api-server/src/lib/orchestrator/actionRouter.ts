@@ -691,7 +691,7 @@ export async function captureAfterSnapshotAndRecord(
       //
       // Attribution strategy:
       //   1. Try to extract the target port from the command (e.g. --port 3000,
-      //      PORT=8080, :3000 in URL args). If a target port is found and it
+      //      PORT=3001, :3000 in URL args). If a target port is found and it
       //      appears in the after-snapshot (whether newly opened or unchanged),
       //      the evidence is tied to that specific port.
       //   2. If no target port can be extracted from the command, serverLivePostCommand
