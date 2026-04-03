@@ -1,10 +1,8 @@
 import { useLocation } from 'wouter';
 import {
-  ArrowLeft,
   Plug,
   CheckCircle2,
   AlertCircle,
-  TerminalSquare,
   Info,
   AlertTriangle,
   Zap,
@@ -13,6 +11,7 @@ import {
   Loader2,
   ExternalLink,
 } from 'lucide-react';
+import { SubpageShell } from '@/components/layout/subpage-shell';
 import { Badge } from '@/components/ui/badge';
 import {
   useGetProviders,
@@ -172,49 +171,29 @@ export default function IntegrationsPage() {
   const { data: providersData, isLoading, isError, refetch } = useGetProviders();
   const providers = providersData?.providers;
 
+  const rightSlot = (
+    <>
+      <button
+        onClick={() => void refetch()}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        title="Refresh"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => navigate('/settings')}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Settings2 className="w-3.5 h-3.5" />
+        <span>Settings</span>
+      </button>
+    </>
+  );
+
   return (
-    <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col">
-
-      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <header className="h-12 bg-panel border-b border-panel-border flex items-center gap-0 px-4 shrink-0">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mr-4 group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back</span>
-        </button>
-
-        <div className="w-px h-5 bg-panel-border mr-4" />
-
-        <div className="flex items-center gap-2 text-sm">
-          <TerminalSquare className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-foreground">VenomGPT</span>
-          <span className="text-muted-foreground/50 mx-1">/</span>
-          <Plug className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">Integrations</span>
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => void refetch()}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => navigate('/settings')}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Settings2 className="w-3.5 h-3.5" />
-            <span>Settings</span>
-          </button>
-        </div>
-      </header>
-
+    <SubpageShell pageIcon={Plug} pageLabel="Integrations" rightSlot={rightSlot}>
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto vg-scroll">
         <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
           {/* Page title */}
@@ -263,6 +242,6 @@ export default function IntegrationsPage() {
           <div className="h-8" />
         </div>
       </div>
-    </div>
+    </SubpageShell>
   );
 }

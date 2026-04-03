@@ -60,8 +60,6 @@ const SUGGESTIONS = [
 ];
 
 const LOCKED_NAV = [
-  { icon: Plug, label: "Integrations" },
-  { icon: Settings, label: "Settings" },
   { icon: FolderOpen, label: "Projects" },
   { icon: BookTemplate, label: "Templates" },
 ];
@@ -209,6 +207,53 @@ function SidebarActiveBtn({ tm, onClick }: { tm: VGTheme; onClick: () => void })
           opacity: 0.55,
           flexShrink: 0,
           transition: "transform 0.15s",
+          transform: hovered ? "translateX(2px)" : "none",
+        }}
+      />
+    </button>
+  );
+}
+
+function NavigableNavItem({ tm, icon: Icon, label, onClick }: { tm: VGTheme; icon: React.ElementType; label: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title={label}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "9px 12px",
+        borderRadius: 8,
+        background: hovered ? tm.navHover : "transparent",
+        border: `1px solid ${hovered ? tm.accentBorder : "transparent"}`,
+        color: hovered ? tm.textSecondary : tm.textMuted,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: 500,
+        textAlign: "left",
+        width: "100%",
+        overflow: "hidden",
+        transition: "background 0.15s, border-color 0.15s, color 0.15s",
+      }}
+    >
+      <Icon size={15} style={{ flexShrink: 0, opacity: 0.8 }} />
+      <span
+        className="vg-sidebar-label"
+        style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+      >
+        {label}
+      </span>
+      <ChevronRight
+        size={12}
+        className="vg-sidebar-label"
+        style={{
+          opacity: hovered ? 0.7 : 0,
+          flexShrink: 0,
+          transition: "opacity 0.15s, transform 0.15s",
           transform: hovered ? "translateX(2px)" : "none",
         }}
       />
@@ -524,6 +569,9 @@ export default function HomePage() {
           }}
         >
           <SidebarActiveBtn tm={tm} onClick={() => navigate("/ide")} />
+
+          <NavigableNavItem tm={tm} icon={Plug} label="Integrations" onClick={() => navigate("/integrations")} />
+          <NavigableNavItem tm={tm} icon={Settings} label="Settings" onClick={() => navigate("/settings")} />
 
           <div
             style={{

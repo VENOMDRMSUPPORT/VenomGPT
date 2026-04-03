@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
-import { useLocation } from 'wouter';
 import {
-  ArrowLeft, Settings2, Cpu, Database, Activity, RotateCcw,
+  Settings2, Cpu, Database, Activity, RotateCcw,
   Trash2, CheckCircle2, AlertCircle, Info, Zap, Eye, EyeOff,
-  Server, Lock, TerminalSquare, Loader2, Play, ExternalLink,
+  Server, Lock, Loader2, Play, ExternalLink,
 } from 'lucide-react';
+import { SubpageShell } from '@/components/layout/subpage-shell';
 import {
   useGetSettings, useUpdateSetting, useResetSettings, useClearHistory,
   type VenomGPTSettings,
@@ -434,7 +434,6 @@ function DiagnosticsSection({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState('execution');
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -478,39 +477,15 @@ export default function SettingsPage() {
 
   const historyCapOptions = [25, 50, 100, 200].map(n => ({ label: `${n} tasks`, value: String(n) }));
 
+  const savingSlot = isSaving ? (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Loader2 className="w-3 h-3 animate-spin" />
+      <span>Saving…</span>
+    </div>
+  ) : null;
+
   return (
-    // h-screen + overflow-hidden on root is required — body has overflow:hidden globally,
-    // so the inner scroll container (contentRef) must be bounded by a fixed-height parent.
-    <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col">
-
-      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <header className="h-12 bg-panel border-b border-panel-border flex items-center gap-0 px-4 shrink-0">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mr-4 group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back</span>
-        </button>
-
-        <div className="w-px h-5 bg-panel-border mr-4" />
-
-        <div className="flex items-center gap-2 text-sm">
-          <TerminalSquare className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-foreground">VenomGPT</span>
-          <span className="text-muted-foreground/50 mx-1">/</span>
-          <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">Settings</span>
-        </div>
-
-        {isSaving && (
-          <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span>Saving…</span>
-          </div>
-        )}
-      </header>
-
+    <SubpageShell pageIcon={Settings2} pageLabel="Settings" rightSlot={savingSlot}>
       {/* ── Body ────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden min-h-0">
 
@@ -538,7 +513,7 @@ export default function SettingsPage() {
         {/* Scrollable content */}
         <main
           ref={contentRef}
-          className="flex-1 overflow-y-auto min-h-0"
+          className="flex-1 overflow-y-auto min-h-0 vg-scroll"
           onScroll={() => {
             // Update active nav item based on scroll position
             const offsets = NAV_SECTIONS.map(s => {
@@ -767,6 +742,6 @@ export default function SettingsPage() {
           </div>
         </main>
       </div>
-    </div>
+    </SubpageShell>
   );
 }

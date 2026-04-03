@@ -10,11 +10,17 @@
   --radius-lg: 8px;
   --radius-xl: 12px;
   --spacing: 0.25rem;
+  --color-warning: hsl(var(--warning));
+  --color-success: hsl(var(--success));
+  --color-destructive: hsl(var(--destructive));
 }
 
 :root {
   --background: 240 20% 4%;
   --foreground: 220 20% 92%;
+  --warning: 38 95% 55%;
+  --success: 142 71% 45%;
+  --destructive: 0 72% 51%;
 }
 
 @layer base {
