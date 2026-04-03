@@ -481,21 +481,17 @@ export default function HomePage() {
           />
           <div
             style={{
-              position: "relative",
               flexShrink: 0,
-              width: 42,
-              height: 42,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              borderRadius: 11,
-              background: tm.logoContainerBg,
-              border: `1px solid ${tm.logoContainerBorder}`,
-              boxShadow: tm.logoContainerShadow,
-              transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s",
+              filter: isDark
+                ? "drop-shadow(0 0 6px rgba(255,255,255,0.55)) drop-shadow(0 0 14px rgba(255,255,255,0.25))"
+                : "none",
+              transition: "filter 0.3s",
             }}
           >
-            <VenomLogo size={27} />
+            <VenomLogo size={38} />
           </div>
           <div className="vg-sidebar-label" style={{ minWidth: 0, position: "relative" }}>
             <div
