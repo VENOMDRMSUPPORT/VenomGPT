@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Switch, Route } from "wouter";
 import Workspace from "./pages/workspace";
 import HomePage from "./pages/home";
+import SettingsPage from "./pages/settings";
+import IntegrationsPage from "./pages/integrations";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +22,8 @@ function App() {
       <TooltipProvider>
         <Switch>
           <Route path="/" component={HomePage} />
+          <Route path="/settings" component={SettingsPage} />
+          <Route path="/integrations" component={IntegrationsPage} />
           <Route component={Workspace} />
         </Switch>
         <Toaster />
