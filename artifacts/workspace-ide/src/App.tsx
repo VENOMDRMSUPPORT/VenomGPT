@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Switch, Route } from "wouter";
 import Workspace from "./pages/workspace";
+import HomePage from "./pages/home";
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -17,7 +18,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Workspace />
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route component={Workspace} />
+        </Switch>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
