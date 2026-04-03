@@ -4,21 +4,7 @@ This guide covers running VenomGPT on external platforms like GitHub Codespaces,
 
 ## Quick Start
 
-### Option 1: Using Docker (Easiest)
-
-```bash
-# 1. Copy .env.example to .env and add your ZAI_API_KEY
-cp .env.example .env
-
-# 2. Start with Docker Compose
-docker-compose up -d
-
-# 3. Access the application
-# IDE: http://localhost:5173
-# API: http://localhost:3001
-```
-
-### Option 2: Using the startup script (Recommended for non-Docker)
+### Option 1: Using the startup script (Recommended)
 
 ```bash
 ./start-external.sh
@@ -30,7 +16,7 @@ This script will:
 - Build the project
 - Start both API server and IDE
 
-### Option 3: Manual setup
+### Option 2: Manual setup
 
 #### 1. Install dependencies
 ```bash
@@ -80,60 +66,6 @@ export VITE_API_PORT=3001
 # Start both services
 pnpm run dev
 ```
-
-## Using Docker
-
-Docker provides the easiest way to run VenomGPT on any platform with Docker installed.
-
-### Docker Compose (Recommended)
-
-```bash
-# 1. Create .env file with your API key
-cp .env.example .env
-# Edit .env and add your ZAI_API_KEY
-
-# 2. Start the services
-docker-compose up -d
-
-# 3. View logs
-docker-compose logs -f
-
-# 4. Stop the services
-docker-compose down
-```
-
-### Docker build and run manually
-
-```bash
-# 1. Build the image
-docker build -t venomgpt .
-
-# 2. Run the container
-docker run -d \
-  -p 3001:3001 \
-  -p 5173:5173 \
-  -e ZAI_API_KEY=your-key-here \
-  -v $(pwd)/workspace:/workspace \
-  --name venomgpt \
-  venomgpt
-```
-
-### Docker volumes
-
-The following volumes are available:
-- `/workspace` - Your code workspace (read-write)
-- `/home/node/.venomgpt` - Agent persistence data
-
-### Docker environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ZAI_API_KEY` | *required* | Your Z.AI API key |
-| `ZAI_BASE_URL` | `https://api.z.ai/api/coding/paas/v4/` | API base URL |
-| `API_PORT` | `3001` | API server port |
-| `IDE_PORT` | `5173` | Frontend IDE port |
-| `BASE_PATH` | `/` | Base path for routing |
-| `NODE_ENV` | `development` | Node environment |
 
 ## Platform-Specific Instructions
 
