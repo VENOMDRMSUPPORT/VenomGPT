@@ -36,7 +36,9 @@ if (process.env["WORKSPACE_ROOT"]) {
 // Load operator settings first so all downstream modules see the correct values
 await loadSettings();
 
-// Load provider registry after settings (reconcileFromEnvironment reads env keys set by env-loader)
+// Load provider registry with error tolerance — missing ZAI_API_KEY does NOT block startup.
+// Provider validation happens at request-time (see modelAdapter.ts:resolveProviderConfig).
+// This allows the app to start and run in degraded mode when no provider is configured.
 try {
   await loadRegistry();
 } catch (err) {

@@ -922,42 +922,66 @@ router.delete("/agent/tasks/:taskId", (req, res) => {
 // supports.  Used by the frontend and operator tooling for honest capability
 // reporting — no guessing, no fake feature flags.
 
-router.get("/agent/capabilities", (_req, res) => {
-  const hasZai    = !!process.env["ZAI_API_KEY"];
-  const hasReplit = !!process.env["AI_INTEGRATIONS_OPENAI_API_KEY"];
-  const provider  = hasZai ? "zai" : hasReplit ? "replit" : "none";
+router.get("/agent/capabilities", (_req, res): void => {
+  const hasZai = !!process.env["ZAI_API_KEY"];
+  const provider: "zai" | "none" = hasZai ? "zai" : "none";
+
+  // Handle missing provider gracefully - return honest "not configured" state
+  // instead of throwing. This allows the frontend to display proper messaging.
+  if (provider === "none") {
+    res.json({
+      provider: "none",
+      agentic: {
+        available: false,
+        primaryModel: null,
+        fallbackChain: [],
+      },
+      vision: {
+        capable: false,
+        primaryModel: null,
+        modelChain: [],
+        runtimeStatus: "not_configured",
+        maxImagesPerRequest: 0,
+        maxImageSizeBytes: 0,
+        note: "No AI provider configured. Set ZAI_API_KEY in .env or Replit secrets.",
+      },
+      multimodal: {
+        imageIntake: false,
+        visionAnalysis: false,
+        codeAwareBridge: false,
+        mcpEnrichment: false,
+      },
+    });
+    return;
+  }
 
   const model         = getModelProvider(getSettings().activeProvider);
   const visualCap     = model.getVisualTaskCapability();
 
-  const agenticChain = hasZai
-    ? getFallbackChain("agentic").map((c) => `${c.modelId} (${c.lane})`)
-    : ["gpt-5.2 (replit-openai)"];
+  const agenticChain = getFallbackChain("agentic").map((c) => `${c.modelId} (${c.lane})`);
 
   res.json({
     provider,
     agentic: {
-      available:     provider !== "none",
-      primaryModel:  hasZai ? "glm-5.1" : hasReplit ? "gpt-5.2" : null,
+      available:     true,
+      primaryModel:  "glm-5.1",
       fallbackChain: agenticChain,
     },
     vision: {
       // Populated entirely from the provider's VisualTaskCapability descriptor.
-      // No hardcoded values here — adding a new provider just requires
-      // implementing getVisualTaskCapability() in its ModelProvider class.
       capable:             visualCap.capable,
       primaryModel:        visualCap.primaryVisionModel,
       modelChain:          visualCap.visionModelChain,
-      runtimeStatus:       "unknown",  // tested at call time, not at boot
+      runtimeStatus:       "unknown",
       maxImagesPerRequest: visualCap.maxImagesPerRequest,
       maxImageSizeBytes:   visualCap.maxImageSizeBytes,
       note:                visualCap.note,
     },
     multimodal: {
-      imageIntake:      true,                // UI + backend validated image submission
-      visionAnalysis:   visualCap.capable,   // two-phase: vision model → text → coding agent
-      codeAwareBridge:  true,                // visual debug file scan + protocol injected on success
-      mcpEnrichment:    false,               // not yet wired (no MCP servers configured)
+      imageIntake:      true,
+      visionAnalysis:   visualCap.capable,
+      codeAwareBridge:  true,
+      mcpEnrichment:    false,
     },
   });
 });

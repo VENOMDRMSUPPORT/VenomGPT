@@ -199,9 +199,13 @@ export async function loadRegistry(): Promise<void> {
 // ─── Live environment reconciliation ─────────────────────────────────────────
 
 /**
- * Inspect environment variables and update provider connection states accordingly.
+ * Reconciles provider state from environment variables at startup.
+ *
+ * NOTE: This only checks for key PRESENCE, not validity. It does NOT make network calls.
+ * A missing key sets the provider to "disconnected" state — this is intentional degraded mode.
+ * Actual key validation happens at request-time in modelAdapter.ts (see resolveProviderConfig).
+ *
  * This runs at startup and reflects what's actually configured right now.
- * Does NOT attempt live network probes — just checks env key presence.
  */
 export async function reconcileFromEnvironment(): Promise<void> {
   const now = new Date().toISOString();

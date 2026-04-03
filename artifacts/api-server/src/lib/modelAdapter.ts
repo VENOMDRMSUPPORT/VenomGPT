@@ -160,6 +160,31 @@ export function isEntitlementError(err: unknown): boolean {
   return false;
 }
 
+// ─── Provider Not Configured Error ─────────────────────────────────────────────
+
+/**
+ * Dedicated error type for provider configuration issues.
+ *
+ * This error is thrown when no AI provider is configured (ZAI_API_KEY is not set).
+ * Unlike other ModelError variants, this is a CONFIGURATION issue, not a runtime issue.
+ * The application can and should start successfully in this degraded mode.
+ *
+ * Frontend endpoints should catch this error and return an appropriate "not configured"
+ * response rather than crashing.
+ *
+ * NOTE: A legacy Replit OpenAI fallback exists in resolveProviderConfig() but is NOT
+ * an official provider path. It is preserved only for backward compatibility in
+ * development environments. This error is only thrown when NEITHER provider is available.
+ */
+export class ProviderNotConfiguredError extends Error {
+  readonly code = "PROVIDER_NOT_CONFIGURED";
+
+  constructor() {
+    super("No AI provider configured. Set ZAI_API_KEY in .env or Replit secrets.");
+    this.name = "ProviderNotConfiguredError";
+  }
+}
+
 // ─── Route-mismatch signal detection ─────────────────────────────────────────
 //
 // A 429 from the Anthropic lane that lacks genuine "balance exhausted" keywords
@@ -333,6 +358,17 @@ interface ProviderConfig {
   routingReason: string;
 }
 
+/**
+ * Resolves the active AI provider configuration.
+ *
+ * IMPORTANT: This function performs REQUEST-TIME validation, not startup validation.
+ * It throws ProviderNotConfiguredError if no provider is configured. This is intentional:
+ * - The app should start successfully even without ZAI_API_KEY
+ * - Provider validation should happen when the provider is actually needed
+ * - Frontend should display "provider not configured" state, not crash
+ *
+ * Call sites should catch ProviderNotConfiguredError and return an appropriate error response.
+ */
 function resolveProviderConfig(): ProviderConfig {
   const zaiApiKey = process.env["ZAI_API_KEY"];
   if (zaiApiKey) {
@@ -372,16 +408,7 @@ function resolveProviderConfig(): ProviderConfig {
     };
   }
 
-  throw new ModelError(
-    [
-      "No AI provider configured. To use VenomGPT locally:",
-      "  1. Get an API key at https://z.ai/manage-apikey/apikey-list",
-      "  2. Add ZAI_API_KEY=your_key to your .env file at the repo root",
-      "  3. Restart the server",
-    ].join("\n"),
-    "missing_api_key",
-    "Neither ZAI_API_KEY nor AI_INTEGRATIONS_OPENAI_API_KEY is set in the environment."
-  );
+  throw new ProviderNotConfiguredError();
 }
 
 // ─── Vision detection ─────────────────────────────────────────────────────────
