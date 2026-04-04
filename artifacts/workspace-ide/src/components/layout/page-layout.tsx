@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Lock, LayoutGrid, Settings, Plug, FolderOpen, BookTemplate, ChevronRight, Menu, X } from "lucide-react";
+import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, ChevronDown, Menu, X } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
-import { type VGTheme, darkTheme } from "@/lib/theme";
+import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 
-const NAV = [
-  { id: "ide", icon: LayoutGrid, label: "Open IDE", path: "/ide", primary: true },
-  { id: "projects", icon: FolderOpen, label: "Projects", path: "/projects" },
+const SUPERAGENTS_ITEM = { id: "superagents", icon: Rocket, label: "Superagents", deferred: true };
+
+const LOWER_NAV = [
+  { id: "home", icon: Home, label: "Home", path: "/" },
+  { id: "projects", icon: LayoutGrid, label: "All apps", path: "/projects" },
+  { id: "templates", icon: BookTemplate, label: "Templates", locked: true },
   { id: "integrations", icon: Plug, label: "Integrations", path: "/integrations" },
-  { id: "settings", icon: Settings, label: "Settings", path: "/settings" },
+  { id: "community", icon: Users, label: "Community", deferred: true },
 ];
-const LOCKED = [{ icon: BookTemplate, label: "Templates" }];
 
 interface PageLayoutProps {
   activePage: string;
@@ -23,25 +25,163 @@ interface PageLayoutProps {
   children: React.ReactNode;
 }
 
-function NavItem({ item, tm, isActive, onClick }: { item: (typeof NAV)[number]; tm: VGTheme; isActive: boolean; onClick: () => void }) {
-  const [hov, setHov] = useState(false);
-  const show = isActive || hov;
+function WorkspaceSelector({ tm }: { tm: VGTheme }) {
   return (
-    <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
-      position: "relative", display: "flex", alignItems: "center", gap: 10,
-      padding: item.primary ? "9px 12px 9px 16px" : "9px 12px", borderRadius: 8,
-      background: item.primary ? (hov ? tm.accentBgHover : tm.accentBg) : isActive ? tm.accentBg : hov ? tm.navHover : "transparent",
-      border: `1px solid ${show ? tm.accentBorder : "transparent"}`,
-      color: item.primary ? tm.accentText : isActive ? tm.accentText : hov ? tm.textSecondary : tm.textMuted,
-      cursor: "pointer", fontSize: 13, fontWeight: item.primary || isActive ? 600 : 500,
-      textAlign: "left", width: "100%", overflow: "hidden",
-      transition: "background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s",
-      boxShadow: item.primary && hov ? `0 2px 14px ${tm.accentShadow}` : "none",
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 9,
+      padding: "8px 12px",
+      margin: "12px 10px 10px",
+      borderRadius: 10,
+      background: "rgba(255,255,255,0.05)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      cursor: "default",
+      userSelect: "none",
     }}>
-      {item.primary && <span style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: 20, borderRadius: "0 3px 3px 0", background: tm.accent }} />}
-      <item.icon size={15} style={{ flexShrink: 0, opacity: 0.8 }} />
-      <span className="pg-sidebar-text" style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
-      <ChevronRight size={12} className="pg-sidebar-text" style={{ opacity: show ? 0.55 : 0, flexShrink: 0, transition: "opacity 0.15s, transform 0.15s", transform: hov ? "translateX(2px)" : "none" }} />
+      <div style={{
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #8A2BE2 0%, #5b21b6 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}>
+        <VenomLogo size={18} />
+      </div>
+      <span className="pg-sidebar-text" style={{
+        flex: 1,
+        fontSize: 13,
+        fontWeight: 600,
+        color: tm.textPrimary,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}>
+        VenomGPT Workspace
+      </span>
+      <ChevronDown size={14} className="pg-sidebar-text" style={{ flexShrink: 0, color: tm.textMuted, opacity: 0.7 }} />
+    </div>
+  );
+}
+
+function AppsNavItem({ tm, onClick }: { tm: VGTheme; onClick: () => void }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: hov ? "rgba(138,43,226,0.36)" : "rgba(138,43,226,0.28)",
+        border: "1px solid rgba(138,43,226,0.45)",
+        color: "#d4b4fe",
+        cursor: "pointer",
+        fontSize: 13.5,
+        fontWeight: 700,
+        textAlign: "left",
+        width: "100%",
+        transition: "background 0.15s",
+      }}
+    >
+      <LayoutGrid size={16} style={{ flexShrink: 0, color: "#c084fc" }} />
+      <span className="pg-sidebar-text" style={{ flex: 1 }}>Apps</span>
+    </button>
+  );
+}
+
+function DeferredNavItem({ icon: Icon, label, tm }: { icon: React.ElementType; label: string; tm: VGTheme }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 14px",
+        borderRadius: 8,
+        color: tm.textDimmed,
+        cursor: "not-allowed",
+        fontSize: 13.5,
+        fontWeight: 500,
+        userSelect: "none",
+        opacity: 0.55,
+      }}
+      title={`${label} — coming soon`}
+    >
+      <Icon size={16} style={{ flexShrink: 0 }} />
+      <span className="pg-sidebar-text" style={{ flex: 1 }}>{label}</span>
+    </div>
+  );
+}
+
+function LowerNavItem({ icon: Icon, label, path, locked, deferred, isActive, tm, onClick }: {
+  icon: React.ElementType;
+  label: string;
+  path?: string;
+  locked?: boolean;
+  deferred?: boolean;
+  isActive: boolean;
+  tm: VGTheme;
+  onClick?: () => void;
+}) {
+  const [hov, setHov] = useState(false);
+
+  if (locked || deferred) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 14px",
+          borderRadius: 8,
+          color: tm.textDimmed,
+          cursor: "not-allowed",
+          fontSize: 13,
+          fontWeight: 500,
+          userSelect: "none",
+          opacity: 0.5,
+        }}
+        title={locked ? `${label} — coming soon` : `${label} — unavailable`}
+      >
+        <Icon size={16} style={{ flexShrink: 0 }} />
+        <span className="pg-sidebar-text" style={{ flex: 1 }}>{label}</span>
+        {locked && <Lock size={11} className="pg-sidebar-text" style={{ flexShrink: 0, opacity: 0.7 }} />}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 14px",
+        borderRadius: 8,
+        background: isActive ? "rgba(138,43,226,0.15)" : hov ? "rgba(255,255,255,0.05)" : "transparent",
+        border: `1px solid ${isActive ? "rgba(138,43,226,0.3)" : "transparent"}`,
+        color: isActive ? tm.textSecondary : hov ? tm.textSecondary : tm.textMuted,
+        cursor: "pointer",
+        fontSize: 13,
+        fontWeight: isActive ? 600 : 400,
+        textAlign: "left",
+        width: "100%",
+        transition: "background 0.15s, border-color 0.15s, color 0.15s",
+      }}
+    >
+      <Icon size={16} style={{ flexShrink: 0 }} />
+      <span className="pg-sidebar-text" style={{ flex: 1 }}>{label}</span>
     </button>
   );
 }
@@ -49,28 +189,38 @@ function NavItem({ item, tm, isActive, onClick }: { item: (typeof NAV)[number]; 
 function SidebarInner({ tm, active, onNav }: { tm: VGTheme; active: string; onNav: () => void }) {
   const [, navigate] = useLocation();
   const go = (p: string) => { onNav(); navigate(p); };
+
   return (
     <>
-      <div style={{ height: 46, flexShrink: 0, padding: "0 14px", display: "flex", alignItems: "center", gap: 11, borderBottom: `1px solid ${tm.sidebarDivider}`, position: "relative", overflow: "hidden", background: tm.sidebarHeaderBg }}>
-        <div style={{ position: "absolute", inset: 0, background: tm.sidebarHeaderGlow, pointerEvents: "none" }} />
-        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", filter: tm === darkTheme ? "drop-shadow(0 0 4px rgba(255,255,255,0.35))" : "none" }}><VenomLogo size={30} /></div>
-        <div className="pg-sidebar-text" style={{ minWidth: 0, position: "relative" }}>
-          <span style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: "0.08em", color: tm.textPrimary }}>VENOM</span>
-          <span style={{ fontSize: 15.5, fontWeight: 300, letterSpacing: "0.08em", color: tm.accent, marginLeft: 2 }}>GPT</span>
-        </div>
-      </div>
-      <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
-        {NAV.map((item) => <NavItem key={item.id} item={item} tm={tm} isActive={active === item.id} onClick={() => go(item.path)} />)}
-        <div style={{ padding: "10px 4px 4px", display: "flex", flexDirection: "column", gap: 1 }}>
-          <div className="pg-sidebar-text" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: tm.sectionLabel, padding: "0 8px", marginBottom: 3 }}>Coming Soon</div>
-          {LOCKED.map(({ icon: I, label }) => (
-            <div key={label} title={`${label} - coming soon`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, color: tm.lockedNavColor, cursor: "not-allowed", fontSize: 13, fontWeight: 500, userSelect: "none" }}>
-              <I size={15} style={{ flexShrink: 0, opacity: 0.72 }} />
-              <span className="pg-sidebar-text" style={{ flex: 1 }}>{label}</span>
-              <Lock size={12} className="pg-sidebar-text" style={{ flexShrink: 0, color: tm.accentText, opacity: 0.55 }} />
-            </div>
-          ))}
-        </div>
+      <WorkspaceSelector tm={tm} />
+
+      <nav style={{ flex: 1, padding: "4px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
+        {/* Primary section: Apps + Superagents */}
+        <AppsNavItem tm={tm} onClick={() => go("/ide")} />
+        <DeferredNavItem icon={SUPERAGENTS_ITEM.icon} label={SUPERAGENTS_ITEM.label} tm={tm} />
+
+        {/* Divider */}
+        <div style={{
+          margin: "8px 4px",
+          height: 1,
+          background: "rgba(255,255,255,0.07)",
+          borderRadius: 1,
+        }} />
+
+        {/* Lower nav group */}
+        {LOWER_NAV.map((item) => (
+          <LowerNavItem
+            key={item.id}
+            icon={item.icon}
+            label={item.label}
+            path={item.path}
+            locked={item.locked}
+            deferred={item.deferred}
+            isActive={active === item.id}
+            tm={tm}
+            onClick={item.path ? () => go(item.path!) : undefined}
+          />
+        ))}
       </nav>
     </>
   );
@@ -98,7 +248,7 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
       <div style={{ position: "absolute", inset: 0, background: tm.atmosphericGlow, pointerEvents: "none", zIndex: 0 }} />
 
       {/* Desktop sidebar */}
-      <aside className="pg-sidebar" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", width: 240, minWidth: 240, maxWidth: 240, height: "100%", borderRight: `1px solid ${tm.sidebarDivider}`, background: tm.sidebarBg, flexShrink: 0, overflowX: "hidden", transition: "background 0.3s, border-color 0.3s" }}>
+      <aside className="pg-sidebar" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", width: 230, minWidth: 230, maxWidth: 230, height: "100%", borderRight: `1px solid ${tm.sidebarDivider}`, background: tm.sidebarBg, flexShrink: 0, overflowX: "hidden", transition: "background 0.3s, border-color 0.3s" }}>
         <SidebarInner tm={tm} active={activePage} onNav={() => {}} />
         <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}`, transition: "border-color 0.3s" }}>
           <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
@@ -115,7 +265,7 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
         {mobileOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, backdropFilter: "blur(4px)" }} />
-            <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 260, zIndex: 95, display: "flex", flexDirection: "column", background: tm.sidebarBg, borderRight: `1px solid ${tm.sidebarDivider}`, overflowY: "auto" }}>
+            <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 230, zIndex: 95, display: "flex", flexDirection: "column", background: tm.sidebarBg, borderRight: `1px solid ${tm.sidebarDivider}`, overflowY: "auto" }}>
               <SidebarInner tm={tm} active={activePage} onNav={() => setMobileOpen(false)} />
               <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}` }}>
                 <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
