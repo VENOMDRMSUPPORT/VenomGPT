@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, ChevronDown, Menu, X } from "lucide-react";
+import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, Menu, X, PanelLeftClose, PanelLeftOpen, Bell, User } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 
-const SUPERAGENTS_ITEM = { id: "superagents", icon: Rocket, label: "Superagents", deferred: true };
+interface NavItem {
+  id: string;
+  icon: React.ElementType;
+  label: string;
+  path?: string;
+  locked?: boolean;
+  deferred?: boolean;
+}
 
-const LOWER_NAV = [
+const SUPERAGENTS_ITEM: NavItem = { id: "superagents", icon: Rocket, label: "Superagents", deferred: true };
+
+const LOWER_NAV: NavItem[] = [
   { id: "home", icon: Home, label: "Home", path: "/" },
   { id: "projects", icon: LayoutGrid, label: "All apps", path: "/projects" },
   { id: "templates", icon: BookTemplate, label: "Templates", path: "/templates" },
@@ -25,44 +34,91 @@ interface PageLayoutProps {
   children: React.ReactNode;
 }
 
-function WorkspaceSelector({ tm }: { tm: VGTheme }) {
+function SidebarHeader({ tm, collapsed, onToggle }: { tm: VGTheme; collapsed: boolean; onToggle: () => void }) {
   return (
     <div style={{
       display: "flex",
       alignItems: "center",
-      gap: 9,
-      padding: "8px 12px",
-      margin: "12px 10px 10px",
-      borderRadius: 10,
-      background: "rgba(255,255,255,0.05)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      cursor: "default",
-      userSelect: "none",
+      padding: collapsed ? "12px 6px 10px" : "12px 12px 10px",
+      borderBottom: `1px solid ${tm.sidebarDivider}`,
+      justifyContent: "space-between",
+      flexShrink: 0,
+      transition: "padding 0.2s",
     }}>
-      <div style={{
-        width: 28,
-        height: 28,
-        borderRadius: "50%",
-        background: "linear-gradient(135deg, #8A2BE2 0%, #5b21b6 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        <VenomLogo size={18} />
+      {/* Logo + name/slogan */}
+      <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0, overflow: "hidden", flex: collapsed ? "unset" : 1 }}>
+        <div style={{
+          width: 30,
+          height: 30,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #8A2BE2 0%, #5b21b6 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          <VenomLogo size={18} />
+        </div>
+        {!collapsed && (
+          <div style={{ minWidth: 0, overflow: "hidden" }}>
+            <div style={{
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: tm.textPrimary,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              lineHeight: 1.2,
+            }}>
+              VenomGPT
+            </div>
+            <div style={{
+              fontSize: 10.5,
+              color: tm.textMuted,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              lineHeight: 1.3,
+              opacity: 0.8,
+            }}>
+              AI-powered workspace
+            </div>
+          </div>
+        )}
       </div>
-      <span className="pg-sidebar-text" style={{
-        flex: 1,
-        fontSize: 13,
-        fontWeight: 600,
-        color: tm.textPrimary,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}>
-        VenomGPT Workspace
-      </span>
-      <ChevronDown size={14} className="pg-sidebar-text" style={{ flexShrink: 0, color: tm.textMuted, opacity: 0.7 }} />
+
+      {/* Collapse toggle */}
+      <button
+        onClick={onToggle}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 26,
+          height: 26,
+          borderRadius: 6,
+          background: "transparent",
+          border: `1px solid ${tm.border}`,
+          color: tm.textMuted,
+          cursor: "pointer",
+          flexShrink: 0,
+          transition: "background 0.15s, color 0.15s, border-color 0.15s",
+          padding: 0,
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "rgba(138,43,226,0.15)";
+          (e.currentTarget as HTMLButtonElement).style.color = tm.textSecondary;
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(138,43,226,0.35)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          (e.currentTarget as HTMLButtonElement).style.color = tm.textMuted;
+          (e.currentTarget as HTMLButtonElement).style.borderColor = tm.border;
+        }}
+      >
+        {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+      </button>
     </div>
   );
 }
@@ -89,6 +145,7 @@ function AppsNavItem({ tm, onClick }: { tm: VGTheme; onClick: () => void }) {
         textAlign: "left",
         width: "100%",
         transition: "background 0.15s",
+        justifyContent: "center",
       }}
     >
       <LayoutGrid size={16} style={{ flexShrink: 0, color: "#c084fc" }} />
@@ -112,6 +169,7 @@ function DeferredNavItem({ icon: Icon, label, tm }: { icon: React.ElementType; l
         fontWeight: 500,
         userSelect: "none",
         opacity: 0.55,
+        justifyContent: "center",
       }}
       title={`${label} — coming soon`}
     >
@@ -148,6 +206,7 @@ function LowerNavItem({ icon: Icon, label, path, locked, deferred, isActive, tm,
           fontWeight: 500,
           userSelect: "none",
           opacity: 0.5,
+          justifyContent: "center",
         }}
         title={locked ? `${label} — coming soon` : `${label} — unavailable`}
       >
@@ -178,6 +237,7 @@ function LowerNavItem({ icon: Icon, label, path, locked, deferred, isActive, tm,
         textAlign: "left",
         width: "100%",
         transition: "background 0.15s, border-color 0.15s, color 0.15s",
+        justifyContent: "center",
       }}
     >
       <Icon size={16} style={{ flexShrink: 0 }} />
@@ -186,61 +246,165 @@ function LowerNavItem({ icon: Icon, label, path, locked, deferred, isActive, tm,
   );
 }
 
-function SidebarInner({ tm, active, onNav }: { tm: VGTheme; active: string; onNav: () => void }) {
+function SidebarNav({ tm, active, onNav }: { tm: VGTheme; active: string; onNav: () => void }) {
   const [, navigate] = useLocation();
   const go = (p: string) => { onNav(); navigate(p); };
 
   return (
-    <>
-      <WorkspaceSelector tm={tm} />
+    <nav style={{ flex: 1, padding: "4px 8px", display: "flex", flexDirection: "column", gap: 1, overflowY: "auto" }}>
+      <AppsNavItem tm={tm} onClick={() => go("/ide")} />
+      <DeferredNavItem icon={SUPERAGENTS_ITEM.icon} label={SUPERAGENTS_ITEM.label} tm={tm} />
 
-      <nav style={{ flex: 1, padding: "4px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
-        {/* Primary section: Apps + Superagents */}
-        <AppsNavItem tm={tm} onClick={() => go("/ide")} />
-        <DeferredNavItem icon={SUPERAGENTS_ITEM.icon} label={SUPERAGENTS_ITEM.label} tm={tm} />
+      <div style={{
+        margin: "8px 4px",
+        height: 1,
+        background: "rgba(255,255,255,0.07)",
+        borderRadius: 1,
+      }} />
 
-        {/* Divider */}
-        <div style={{
-          margin: "8px 4px",
-          height: 1,
-          background: "rgba(255,255,255,0.07)",
-          borderRadius: 1,
-        }} />
-
-        {/* Lower nav group */}
-        {LOWER_NAV.map((item) => (
-          <LowerNavItem
-            key={item.id}
-            icon={item.icon}
-            label={item.label}
-            path={item.path}
-            locked={item.locked}
-            deferred={item.deferred}
-            isActive={active === item.id}
-            tm={tm}
-            onClick={item.path ? () => go(item.path!) : undefined}
-          />
-        ))}
-      </nav>
-    </>
+      {LOWER_NAV.map((item) => (
+        <LowerNavItem
+          key={item.id}
+          icon={item.icon}
+          label={item.label}
+          path={item.path}
+          locked={item.locked}
+          deferred={item.deferred}
+          isActive={active === item.id}
+          tm={tm}
+          onClick={item.path ? () => go(item.path!) : undefined}
+        />
+      ))}
+    </nav>
   );
 }
 
 function ThemeBtn({ isDark, tm, onToggle }: { isDark: boolean; tm: VGTheme; onToggle: () => void }) {
   const [hov, setHov] = useState(false);
   return (
-    <button onClick={onToggle} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 8, background: hov ? tm.navHover : "transparent", border: `1px solid ${hov ? tm.accentBorder : tm.border}`, color: hov ? tm.textSecondary : tm.textMuted, cursor: "pointer", fontSize: 12, fontWeight: 500, width: "100%", transition: "background 0.15s, border-color 0.15s, color 0.15s" }}>
+    <button
+      onClick={onToggle}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        padding: "8px 12px",
+        borderRadius: 8,
+        background: hov ? tm.navHover : "transparent",
+        border: `1px solid ${hov ? tm.accentBorder : tm.border}`,
+        color: hov ? tm.textSecondary : tm.textMuted,
+        cursor: "pointer",
+        fontSize: 12,
+        fontWeight: 500,
+        width: "100%",
+        transition: "background 0.15s, border-color 0.15s, color 0.15s",
+        justifyContent: "center",
+      }}
+    >
       <AnimatePresence mode="wait" initial={false}>
-        {isDark ? <motion.span key="s" initial={{ opacity: 0, rotate: -30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Sun size={14} /></motion.span> : <motion.span key="m" initial={{ opacity: 0, rotate: 30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Moon size={14} /></motion.span>}
+        {isDark
+          ? <motion.span key="s" initial={{ opacity: 0, rotate: -30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Sun size={14} /></motion.span>
+          : <motion.span key="m" initial={{ opacity: 0, rotate: 30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Moon size={14} /></motion.span>
+        }
       </AnimatePresence>
       <span className="pg-sidebar-text">{isDark ? "Light mode" : "Dark mode"}</span>
     </button>
   );
 }
 
+function SidebarFooter({ isDark, tm, onToggleTheme }: { isDark: boolean; tm: VGTheme; onToggleTheme: () => void }) {
+  const [notifHov, setNotifHov] = useState(false);
+
+  return (
+    <div style={{
+      padding: "8px 8px 14px",
+      borderTop: `1px solid ${tm.sidebarDivider}`,
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+      flexShrink: 0,
+      transition: "border-color 0.3s",
+    }}>
+      {/* Profile row */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        padding: "8px 12px",
+        borderRadius: 8,
+        cursor: "default",
+        userSelect: "none",
+        justifyContent: "center",
+      }}>
+        <div style={{
+          width: 26,
+          height: 26,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #8A2BE2 0%, #5b21b6 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#fff",
+        }}>
+          <User size={13} />
+        </div>
+        <span className="pg-sidebar-text" style={{
+          flex: 1,
+          fontSize: 12.5,
+          fontWeight: 500,
+          color: tm.textMuted,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}>
+          My Account
+        </span>
+      </div>
+
+      {/* Theme toggle */}
+      <ThemeBtn isDark={isDark} tm={tm} onToggle={onToggleTheme} />
+
+      {/* Notifications row */}
+      <button
+        onMouseEnter={() => setNotifHov(true)}
+        onMouseLeave={() => setNotifHov(false)}
+        title="Notifications"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 9,
+          padding: "8px 12px",
+          borderRadius: 8,
+          background: notifHov ? tm.navHover : "transparent",
+          border: `1px solid ${notifHov ? tm.accentBorder : tm.border}`,
+          color: notifHov ? tm.textSecondary : tm.textMuted,
+          cursor: "pointer",
+          fontSize: 12,
+          fontWeight: 500,
+          width: "100%",
+          transition: "background 0.15s, border-color 0.15s, color 0.15s",
+          justifyContent: "center",
+        }}
+      >
+        <Bell size={14} style={{ flexShrink: 0 }} />
+        <span className="pg-sidebar-text">Notifications</span>
+      </button>
+    </div>
+  );
+}
+
 export default function PageLayout({ activePage, header, headerRight, centered, fullHeight, children }: PageLayoutProps) {
   const { isDark, tm, setIsDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const sidebarWidth = collapsed ? 58 : 230;
 
   return (
     <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", background: tm.bgBase, color: tm.textPrimary, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", position: "relative", transition: "background 0.3s, color 0.3s" }}>
@@ -248,11 +412,28 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
       <div style={{ position: "absolute", inset: 0, background: tm.atmosphericGlow, pointerEvents: "none", zIndex: 0 }} />
 
       {/* Desktop sidebar */}
-      <aside className="pg-sidebar" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", width: 230, minWidth: 230, maxWidth: 230, height: "100%", borderRight: `1px solid ${tm.sidebarDivider}`, background: tm.sidebarBg, flexShrink: 0, overflowX: "hidden", transition: "background 0.3s, border-color 0.3s" }}>
-        <SidebarInner tm={tm} active={activePage} onNav={() => {}} />
-        <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}`, transition: "border-color 0.3s" }}>
-          <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
-        </div>
+      <aside
+        className="pg-sidebar"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: "column",
+          width: sidebarWidth,
+          minWidth: sidebarWidth,
+          maxWidth: sidebarWidth,
+          height: "100%",
+          borderRight: `1px solid ${tm.sidebarDivider}`,
+          background: tm.sidebarBg,
+          flexShrink: 0,
+          overflowX: "hidden",
+          transition: "width 0.22s ease, min-width 0.22s ease, max-width 0.22s ease, background 0.3s, border-color 0.3s",
+        }}
+        data-collapsed={collapsed ? "true" : "false"}
+      >
+        <SidebarHeader tm={tm} collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+        <SidebarNav tm={tm} active={activePage} onNav={() => {}} />
+        <SidebarFooter isDark={isDark} tm={tm} onToggleTheme={() => setIsDark((d) => !d)} />
       </aside>
 
       {/* Mobile hamburger */}
@@ -266,10 +447,9 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, backdropFilter: "blur(4px)" }} />
             <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 230, zIndex: 95, display: "flex", flexDirection: "column", background: tm.sidebarBg, borderRight: `1px solid ${tm.sidebarDivider}`, overflowY: "auto" }}>
-              <SidebarInner tm={tm} active={activePage} onNav={() => setMobileOpen(false)} />
-              <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}` }}>
-                <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
-              </div>
+              <SidebarHeader tm={tm} collapsed={false} onToggle={() => setMobileOpen(false)} />
+              <SidebarNav tm={tm} active={activePage} onNav={() => setMobileOpen(false)} />
+              <SidebarFooter isDark={isDark} tm={tm} onToggleTheme={() => setIsDark((d) => !d)} />
             </motion.aside>
           </>
         )}
@@ -298,6 +478,7 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
       </main>
 
       <style>{`
+        .pg-sidebar[data-collapsed="true"] .pg-sidebar-text { display: none !important; }
         @media (max-width: 1024px) { .pg-sidebar { width: 58px !important; min-width: 58px !important; max-width: 58px !important; } .pg-sidebar .pg-sidebar-text { display: none !important; } }
         @media (max-width: 768px) { .pg-sidebar { display: none !important; } .pg-mobile-toggle { display: flex !important; } .pg-header-gap { width: 44px !important; } .pg-main-centered { padding: 20px !important; } }
         @media (max-width: 480px) { .pg-main-centered { padding: 14px !important; } }
