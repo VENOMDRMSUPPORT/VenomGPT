@@ -1,12 +1,125 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
-  FolderOpen, RefreshCw, X, ChevronRight, ChevronDown, FileEdit, Copy,
+  FolderOpen, RefreshCw, X, ChevronRight, ChevronDown, Copy,
   Trash2, FilePlus, FolderPlus, Download, Pencil, Search, ChevronsUpDown,
-  FileCode, Folder,
+  FileCode, Folder, AlertTriangle,
 } from 'lucide-react';
 import { useListFiles, FileEntry, getListFilesQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIdeStore } from '@/store/use-ide-store';
+
+// ─── Inline confirmation dialog ───────────────────────────────────────────────
+// Replaces window.confirm for delete operations.
+
+interface ConfirmDialogProps {
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function ConfirmDialog({ message, onConfirm, onCancel }: ConfirmDialogProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', handleKey, true);
+    return () => document.removeEventListener('keydown', handleKey, true);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50">
+      <div className="bg-panel border border-panel-border rounded-xl shadow-2xl shadow-black/60 p-5 w-72 max-w-[90vw]">
+        <div className="flex items-start gap-3 mb-4">
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground/90 leading-snug">{message}</p>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            ref={cancelRef}
+            onClick={onCancel}
+            className="px-3 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground border border-panel-border hover:bg-background/60 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-3 py-1.5 rounded text-xs font-semibold bg-red-500/80 hover:bg-red-500 text-white border border-red-500/40 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Inline rename dialog ─────────────────────────────────────────────────────
+// Replaces window.prompt for rename operations.
+
+interface RenameDialogProps {
+  initialName: string;
+  onConfirm: (newName: string) => void;
+  onCancel: () => void;
+}
+
+function RenameDialog({ initialName, onConfirm, onCancel }: RenameDialogProps) {
+  const [value, setValue] = useState(initialName);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', handleKey, true);
+    return () => document.removeEventListener('keydown', handleKey, true);
+  }, [onCancel]);
+
+  const handleSubmit = () => {
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== initialName) {
+      onConfirm(trimmed);
+    } else {
+      onCancel();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50">
+      <div className="bg-panel border border-panel-border rounded-xl shadow-2xl shadow-black/60 p-5 w-72 max-w-[90vw]">
+        <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-widest mb-3">Rename</p>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') handleSubmit();
+          }}
+          className="w-full bg-background border border-panel-border/80 rounded px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 font-mono mb-4"
+        />
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-3 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground border border-panel-border hover:bg-background/60 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!value.trim() || value.trim() === initialName}
+            className="px-3 py-1.5 rounded text-xs font-semibold bg-primary/80 hover:bg-primary text-background border border-primary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Rename
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Context menu ────────────────────────────────────────────────────────────
 
@@ -20,27 +133,36 @@ interface ContextMenuProps {
   menu: ContextMenuState;
   onClose: () => void;
   onRefresh: () => void;
+  /** Called when the user chooses New File/Folder inside a directory entry. */
+  onCreateInDirectory: (mode: 'file' | 'folder', parentPath: string) => void;
+  /** Non-blocking error feedback for failed operations. */
+  onError: (msg: string) => void;
 }
 
-function ContextMenu({ menu, onClose, onRefresh }: ContextMenuProps) {
+function ContextMenu({ menu, onClose, onRefresh, onCreateInDirectory, onError }: ContextMenuProps) {
   const { entry } = menu;
   const isDir = entry.type === 'directory';
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Pending modal state: 'delete' | 'rename' | null
+  const [pendingAction, setPendingAction] = useState<'delete' | 'rename' | null>(null);
+
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
+        if (!pendingAction) onClose();
       }
     };
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !pendingAction) onClose();
+    };
     document.addEventListener('mousedown', handleClick, true);
     document.addEventListener('keydown', handleKey, true);
     return () => {
       document.removeEventListener('mousedown', handleClick, true);
       document.removeEventListener('keydown', handleKey, true);
     };
-  }, [onClose]);
+  }, [onClose, pendingAction]);
 
   const style: React.CSSProperties = {
     position: 'fixed',
@@ -54,29 +176,26 @@ function ContextMenu({ menu, onClose, onRefresh }: ContextMenuProps) {
     onClose();
   };
 
-  const handleDelete = async () => {
-    const confirmed = window.confirm(`Delete "${entry.name}"?`);
-    if (!confirmed) { onClose(); return; }
+  const handleDeleteConfirm = async () => {
+    setPendingAction(null);
     try {
       const res = await fetch(`/api/files/delete?path=${encodeURIComponent(entry.path)}`, { method: 'DELETE' });
       if (res.ok) {
         onRefresh();
       } else {
-        const body = await res.json().catch(() => ({}));
-        alert(`Delete failed: ${body.message ?? 'Unknown error'}`);
+        const body = await res.json().catch(() => ({})) as { message?: string };
+        onError(`Delete failed: ${body.message ?? 'unknown error'}`);
       }
     } catch {
-      alert('Delete failed: network error');
+      onError('Delete failed: network error');
     }
     onClose();
   };
 
-  const handleRename = async () => {
-    const currentName = entry.name;
+  const handleRenameConfirm = async (newName: string) => {
+    setPendingAction(null);
     const dir = entry.path.includes('/') ? entry.path.slice(0, entry.path.lastIndexOf('/') + 1) : '';
-    const newName = window.prompt('Rename to:', currentName);
-    if (!newName || newName.trim() === '' || newName.trim() === currentName) { onClose(); return; }
-    const newPath = dir + newName.trim();
+    const newPath = dir + newName;
     try {
       const res = await fetch('/api/files/rename', {
         method: 'POST',
@@ -86,73 +205,45 @@ function ContextMenu({ menu, onClose, onRefresh }: ContextMenuProps) {
       if (res.ok) {
         onRefresh();
       } else {
-        const body = await res.json().catch(() => ({}));
-        alert(`Rename failed: ${body.message ?? 'Unknown error'}`);
+        const body = await res.json().catch(() => ({})) as { message?: string };
+        onError(`Rename failed: ${body.message ?? 'unknown error'}`);
       }
     } catch {
-      alert('Rename failed: network error');
+      onError('Rename failed: network error');
     }
     onClose();
   };
 
-  const handleAddFile = async () => {
-    const name = window.prompt('New file name:');
-    if (!name || name.trim() === '') { onClose(); return; }
-    const filePath = isDir ? `${entry.path}/${name.trim()}` : `${entry.path.slice(0, entry.path.lastIndexOf('/') + 1)}${name.trim()}`;
-    try {
-      const res = await fetch('/api/files/write', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: filePath, content: '' }),
-      });
-      if (res.ok) {
-        onRefresh();
-      } else {
-        const body = await res.json().catch(() => ({}));
-        alert(`Create failed: ${body.message ?? 'Unknown error'}`);
-      }
-    } catch {
-      alert('Create failed: network error');
-    }
+  const parentPath = isDir
+    ? entry.path
+    : (entry.path.includes('/') ? entry.path.slice(0, entry.path.lastIndexOf('/')) : '');
+
+  const handleAddFile = () => {
+    onCreateInDirectory('file', parentPath);
     onClose();
   };
 
-  const handleAddFolder = async () => {
-    const name = window.prompt('New folder name:');
-    if (!name || name.trim() === '') { onClose(); return; }
-    const parentDir = isDir ? entry.path : entry.path.slice(0, entry.path.lastIndexOf('/')) || '.';
-    const folderPath = `${parentDir}/${name.trim()}`;
-    try {
-      const res = await fetch('/api/files/mkdir', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: folderPath }),
-      });
-      if (res.ok) {
-        onRefresh();
-      } else {
-        const body = await res.json().catch(() => ({}));
-        alert(`Create folder failed: ${body.message ?? 'Unknown error'}`);
-      }
-    } catch {
-      alert('Create folder failed: network error');
-    }
+  const handleAddFolder = () => {
+    onCreateInDirectory('folder', parentPath);
     onClose();
   };
 
   const handleDownload = async () => {
     try {
       const res = await fetch(`/api/files/download?path=${encodeURIComponent(entry.path)}`);
-      if (!res.ok) { alert('Download failed: could not read file'); onClose(); return; }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = entry.name;
-      a.click();
-      URL.revokeObjectURL(url);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = entry.name;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        onError('Download failed: could not read file');
+      }
     } catch {
-      alert('Download failed: network error');
+      onError('Download failed: network error');
     }
     onClose();
   };
@@ -161,48 +252,66 @@ function ContextMenu({ menu, onClose, onRefresh }: ContextMenuProps) {
   const sepCls = 'my-1 border-t border-panel-border/60';
 
   return (
-    <div
-      ref={menuRef}
-      style={style}
-      className="bg-panel border border-panel-border rounded-lg shadow-xl shadow-black/40 py-1 min-w-[168px] overflow-hidden"
-      onContextMenu={e => e.preventDefault()}
-    >
-      <button className={itemCls} onClick={handleRename}>
-        <Pencil className="w-3 h-3 opacity-60" />
-        Rename
-      </button>
-      <button className={itemCls} onClick={handleCopyPath}>
-        <Copy className="w-3 h-3 opacity-60" />
-        Copy path
-      </button>
-      {!isDir && (
-        <button className={itemCls} onClick={handleDownload}>
-          <Download className="w-3 h-3 opacity-60" />
-          Download
-        </button>
-      )}
-      {isDir && (
-        <>
-          <div className={sepCls} />
-          <button className={itemCls} onClick={handleAddFile}>
-            <FilePlus className="w-3 h-3 opacity-60" />
-            New file
-          </button>
-          <button className={itemCls} onClick={handleAddFolder}>
-            <FolderPlus className="w-3 h-3 opacity-60" />
-            New folder
-          </button>
-        </>
-      )}
-      <div className={sepCls} />
-      <button
-        className="flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/15 cursor-pointer rounded transition-colors select-none w-full text-left"
-        onClick={handleDelete}
+    <>
+      <div
+        ref={menuRef}
+        style={style}
+        className="bg-panel border border-panel-border rounded-lg shadow-xl shadow-black/40 py-1 min-w-[168px] overflow-hidden"
+        onContextMenu={e => e.preventDefault()}
       >
-        <Trash2 className="w-3 h-3 opacity-70" />
-        Delete
-      </button>
-    </div>
+        <button className={itemCls} onClick={() => setPendingAction('rename')}>
+          <Pencil className="w-3 h-3 opacity-60" />
+          Rename
+        </button>
+        <button className={itemCls} onClick={handleCopyPath}>
+          <Copy className="w-3 h-3 opacity-60" />
+          Copy path
+        </button>
+        {!isDir && (
+          <button className={itemCls} onClick={handleDownload}>
+            <Download className="w-3 h-3 opacity-60" />
+            Download
+          </button>
+        )}
+        {isDir && (
+          <>
+            <div className={sepCls} />
+            <button className={itemCls} onClick={handleAddFile}>
+              <FilePlus className="w-3 h-3 opacity-60" />
+              New file
+            </button>
+            <button className={itemCls} onClick={handleAddFolder}>
+              <FolderPlus className="w-3 h-3 opacity-60" />
+              New folder
+            </button>
+          </>
+        )}
+        <div className={sepCls} />
+        <button
+          className="flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/15 cursor-pointer rounded transition-colors select-none w-full text-left"
+          onClick={() => setPendingAction('delete')}
+        >
+          <Trash2 className="w-3 h-3 opacity-70" />
+          Delete
+        </button>
+      </div>
+
+      {/* Inline modals — rendered above the context menu */}
+      {pendingAction === 'delete' && (
+        <ConfirmDialog
+          message={`Delete "${entry.name}"? This cannot be undone.`}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => { setPendingAction(null); onClose(); }}
+        />
+      )}
+      {pendingAction === 'rename' && (
+        <RenameDialog
+          initialName={entry.name}
+          onConfirm={handleRenameConfirm}
+          onCancel={() => { setPendingAction(null); onClose(); }}
+        />
+      )}
+    </>
   );
 }
 
@@ -373,8 +482,21 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  const [inlinePrompt, setInlinePrompt] = useState<'file' | 'folder' | null>(null);
+  // inlinePrompt tracks both the mode and the parent directory for the new entry.
+  // parentPath '' means workspace root.
+  const [inlinePrompt, setInlinePrompt] = useState<{ mode: 'file' | 'folder'; parentPath: string } | null>(null);
+  // Non-blocking inline error for failed file operations (auto-clears after 4 s).
+  const [opError, setOpError] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const showOpError = useCallback((msg: string) => {
+    setOpError(msg);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setOpError(null), 4000);
+  }, []);
+
+  useEffect(() => () => { if (errorTimerRef.current) clearTimeout(errorTimerRef.current); }, []);
 
   const handleRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getListFilesQueryKey() });
@@ -403,49 +525,52 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
 
   const [collapseKey, setCollapseKey] = useState(0);
 
-  const handleNewFile = async () => {
-    setInlinePrompt('file');
-  };
+  // Header buttons create at workspace root (parentPath '').
+  const handleNewFile = () => setInlinePrompt({ mode: 'file', parentPath: '' });
+  const handleNewFolder = () => setInlinePrompt({ mode: 'folder', parentPath: '' });
 
-  const handleNewFolder = async () => {
-    setInlinePrompt('folder');
-  };
+  // Context-menu callback: creates inside a specific directory.
+  const handleCreateInDirectory = useCallback((mode: 'file' | 'folder', parentPath: string) => {
+    setInlinePrompt({ mode, parentPath });
+  }, []);
 
   const handleInlineConfirm = async (name: string) => {
-    const mode = inlinePrompt;
+    const prompt = inlinePrompt;
     setInlinePrompt(null);
-    if (!mode) return;
-    if (mode === 'file') {
+    if (!prompt) return;
+    // Compose the full path: if parentPath is set, scope the name to that directory.
+    const fullPath = prompt.parentPath ? `${prompt.parentPath}/${name}` : name;
+    if (prompt.mode === 'file') {
       try {
         const res = await fetch('/api/files/write', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: name, content: '' }),
+          body: JSON.stringify({ path: fullPath, content: '' }),
         });
         if (res.ok) {
           handleRefresh();
         } else {
-          const body = await res.json().catch(() => ({}));
-          alert(`Create failed: ${body.message ?? 'Unknown error'}`);
+          const body = await res.json().catch(() => ({})) as { message?: string };
+          showOpError(`Create failed: ${body.message ?? 'unknown error'}`);
         }
       } catch {
-        alert('Create failed: network error');
+        showOpError('Create failed: network error');
       }
     } else {
       try {
         const res = await fetch('/api/files/mkdir', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: name }),
+          body: JSON.stringify({ path: fullPath }),
         });
         if (res.ok) {
           handleRefresh();
         } else {
-          const body = await res.json().catch(() => ({}));
-          alert(`Create folder failed: ${body.message ?? 'Unknown error'}`);
+          const body = await res.json().catch(() => ({})) as { message?: string };
+          showOpError(`Create folder failed: ${body.message ?? 'unknown error'}`);
         }
       } catch {
-        alert('Create folder failed: network error');
+        showOpError('Create folder failed: network error');
       }
     }
   };
@@ -527,6 +652,17 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
           </div>
         </div>
 
+        {/* Inline operation error banner — auto-dismisses after 4 s */}
+        {opError && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border-b border-red-500/20 shrink-0">
+            <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+            <span className="text-[11px] text-red-300/80 flex-1 truncate">{opError}</span>
+            <button onClick={() => setOpError(null)} className="text-red-400/60 hover:text-red-400 transition-colors shrink-0">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {/* Search input */}
         {showSearch && (
           <div className="px-2 py-1.5 border-b border-panel-border/60 shrink-0">
@@ -552,11 +688,11 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
           </div>
         )}
 
-        {/* Inline prompt for new file/folder at root */}
+        {/* Inline prompt for new file/folder (root or directory-targeted) */}
         {inlinePrompt && (
           <div className="border-b border-panel-border/40">
             <InlinePrompt
-              mode={inlinePrompt}
+              mode={inlinePrompt.mode}
               onConfirm={handleInlineConfirm}
               onCancel={() => setInlinePrompt(null)}
             />
@@ -584,9 +720,9 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
               ))}
             </div>
           ) : hasSearch ? (
-            <p className="text-xs text-muted-foreground text-center p-4">No files match "{searchQuery}"</p>
+            <p className="text-xs text-muted-foreground/40 text-center p-4">No files match "{searchQuery}"</p>
           ) : (
-            <p className="text-xs text-muted-foreground text-center p-4">No files found</p>
+            <p className="text-xs text-muted-foreground/40 text-center p-4">No files in workspace</p>
           )}
         </div>
       </div>
@@ -597,6 +733,8 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
           menu={contextMenu}
           onClose={handleCloseMenu}
           onRefresh={() => { handleRefresh(); handleCloseMenu(); }}
+          onCreateInDirectory={handleCreateInDirectory}
+          onError={showOpError}
         />
       )}
     </div>

@@ -8,34 +8,37 @@ import {
   ListChecks, Loader2,
   Sparkles, X,
   RefreshCw, Crown,
-  Plus, LayoutGrid, ChevronDown,
-  Users,
+  Plus, LayoutGrid,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const TASK_RAIL_WIDTH = 240;
 
-const HIDDEN_IN_LIST = new Set<BoardTaskStatus>(['done', 'archived']);
+// Sidebar shows only tasks that need attention: running/stalled/blocked and
+// error/interrupted/partial. Draft, pending, done, archived, cancelled are
+// hidden here — they remain visible in the full task board.
+const HIDDEN_IN_LIST = new Set<BoardTaskStatus>(['done', 'archived', 'draft', 'pending', 'cancelled']);
 
 function formatIndex(index: number): string {
   return `#${String(index).padStart(3, '0')}`;
 }
 
 // ─── Status visual config ─────────────────────────────────────────────────────
+// Dot colors and labels are truthful to the actual task lifecycle states.
 
 const STATUS_CONFIG: Record<BoardTaskStatus, { dot: string; label: string }> = {
-  draft:       { dot: 'bg-muted-foreground/40',   label: 'Draft'       },
-  pending:     { dot: 'bg-muted-foreground/40',   label: 'Pending'     },
-  running:     { dot: 'bg-blue-400 animate-pulse', label: 'Active'     },
+  draft:       { dot: 'bg-muted-foreground/40',    label: 'Draft'       },
+  pending:     { dot: 'bg-muted-foreground/40',    label: 'Pending'     },
+  running:     { dot: 'bg-blue-400 animate-pulse', label: 'Running'     },
   done:        { dot: 'bg-green-500',              label: 'Done'        },
   archived:    { dot: 'bg-muted-foreground/30',    label: 'Archived'    },
-  error:       { dot: 'bg-green-400',              label: 'Ready'       },
+  error:       { dot: 'bg-red-400',               label: 'Error'       },
   cancelled:   { dot: 'bg-red-500',               label: 'Cancelled'   },
-  interrupted: { dot: 'bg-green-400',             label: 'Ready'       },
-  stalled:     { dot: 'bg-blue-400',              label: 'Active'      },
-  blocked:     { dot: 'bg-blue-400',              label: 'Active'      },
-  partial:     { dot: 'bg-green-400',             label: 'Ready'       },
+  interrupted: { dot: 'bg-amber-400',             label: 'Interrupted' },
+  stalled:     { dot: 'bg-amber-400',             label: 'Stalled'     },
+  blocked:     { dot: 'bg-amber-400',             label: 'Blocked'     },
+  partial:     { dot: 'bg-amber-400',             label: 'Partial'     },
 };
 
 function StatusDot({ status }: { status: BoardTaskStatus }) {
@@ -92,35 +95,10 @@ function TaskRow({ task, isActive, onSelect, onDelete, deletingId }: TaskRowProp
   );
 }
 
-// ─── Filter toggle ─────────────────────────────────────────────────────────────
-
-type FilterType = 'tasks' | 'plans';
-
-function FilterToggle({ value, onChange }: { value: FilterType; onChange: (v: FilterType) => void }) {
-  return (
-    <div className="flex items-center rounded overflow-hidden border border-panel-border/50 h-5">
-      {(['tasks', 'plans'] as FilterType[]).map(f => (
-        <button
-          key={f}
-          onClick={() => onChange(f)}
-          className={`px-2 h-full text-[9px] font-semibold uppercase tracking-wide transition-colors ${
-            value === f
-              ? 'bg-primary/20 text-primary'
-              : 'text-muted-foreground/35 hover:text-muted-foreground/60 bg-transparent'
-          }`}
-        >
-          {f}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TaskListPanel() {
   const [deletingId, setDeletingId]   = useState<string | null>(null);
-  const [filterType, setFilterType]   = useState<FilterType>('tasks');
 
   const activeTaskId         = useIdeStore(s => s.activeTaskId);
   const viewingTaskId        = useIdeStore(s => s.viewingTaskId);
@@ -203,6 +181,13 @@ export function TaskListPanel() {
     );
   }
 
+  // Derive workspace display name: prefer masterSession.name, fall back to
+  // the last path segment of workspaceRoot, then a neutral "Workspace" label.
+  const workspaceName = masterSession?.name
+    || (masterSession?.workspaceRoot
+        ? (masterSession.workspaceRoot.split('/').filter(Boolean).pop() || 'Workspace')
+        : 'Workspace');
+
   return (
     <div
       className={`task-rail-panel h-full flex flex-col bg-panel border-r border-panel-border overflow-hidden shrink-0 ${!sidebarOpen ? 'rail-sidebar-collapsed' : ''}`}
@@ -230,20 +215,20 @@ export function TaskListPanel() {
           </div>
         ) : (
           <>
-            {/* ── Master session card — pinned at top ─────────────────── */}
+            {/* ── Workspace session card — pinned at top ─────────────────── */}
             {masterSession && (
               <div className="mx-2 mt-2 mb-0 px-2 py-1.5 rounded border border-primary/15 bg-primary/5 flex items-center gap-2">
                 <Crown className="w-3 h-3 shrink-0 text-primary/50" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-primary/60 uppercase tracking-wide leading-none mb-0.5">Session</p>
+                  <p className="text-[10px] font-semibold text-primary/60 uppercase tracking-wide leading-none mb-0.5">Workspace</p>
                   <p className="text-[11px] text-foreground/70 font-mono truncate" title={masterSession.workspaceRoot}>
-                    {masterSession.workspaceRoot.split('/').pop() || masterSession.workspaceRoot}
+                    {workspaceName}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* ── + New task button — directly below master session ─────── */}
+            {/* ── + New task button — directly below workspace card ─────── */}
             <button
               onClick={() => setMainView('editor')}
               className="mx-2 mt-1.5 mb-1 w-[calc(100%-1rem)] flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors border-dashed border-primary/20 text-muted-foreground/50 hover:text-foreground/80 hover:border-primary/35 hover:bg-primary/5"
@@ -257,7 +242,7 @@ export function TaskListPanel() {
             <div className="px-2 pt-1">
               <div className="flex items-center gap-1 px-1 mb-1">
                 <span className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-widest flex-1">
-                  Tasks
+                  Active &amp; Needs Review
                 </span>
                 <span className="text-[9px] text-muted-foreground/30 tabular-nums">
                   {activeTasks.length}
@@ -303,17 +288,6 @@ export function TaskListPanel() {
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <div className="border-t border-panel-border shrink-0 bg-background/20">
-        {/* Plans/Tasks filter + Creator stub row */}
-        <div className="flex items-center gap-2 px-2.5 py-1.5 border-b border-panel-border/40">
-          <FilterToggle value={filterType} onChange={setFilterType} />
-          <button
-            className="flex items-center gap-1 text-[9px] text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors ml-auto"
-            title="Filter by creator (coming soon)"
-          >
-            <Users className="w-2.5 h-2.5" />
-            <ChevronDown className="w-2 h-2" />
-          </button>
-        </div>
         {/* Open board control */}
         <div className="flex items-center px-2.5 py-1.5">
           <button
