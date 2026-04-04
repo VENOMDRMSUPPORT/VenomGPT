@@ -71,7 +71,6 @@ function SidebarHeader({ tm, collapsed }: { tm: VGTheme; collapsed: boolean }) {
           height: 34,
           objectFit: "contain",
           flexShrink: 0,
-          borderRadius: 4,
         }}
       />
 
