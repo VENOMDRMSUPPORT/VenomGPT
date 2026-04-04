@@ -6,6 +6,7 @@ import Workspace from "./pages/workspace";
 import HomePage from "./pages/home";
 import SettingsPage from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
+import ProjectsPage from "./pages/projects";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,7 @@ function App() {
       <TooltipProvider>
         <Switch>
           <Route path="/" component={HomePage} />
+          <Route path="/projects" component={ProjectsPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route path="/integrations" component={IntegrationsPage} />
           <Route component={Workspace} />

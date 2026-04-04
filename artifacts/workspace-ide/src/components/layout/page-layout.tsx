@@ -8,10 +8,11 @@ import { ThemeCtx } from "@/lib/theme-context";
 
 const NAV = [
   { id: "ide", icon: LayoutGrid, label: "Open IDE", path: "/ide", primary: true },
+  { id: "projects", icon: FolderOpen, label: "Projects", path: "/projects" },
   { id: "integrations", icon: Plug, label: "Integrations", path: "/integrations" },
   { id: "settings", icon: Settings, label: "Settings", path: "/settings" },
 ];
-const LOCKED = [{ icon: FolderOpen, label: "Projects" }, { icon: BookTemplate, label: "Templates" }];
+const LOCKED = [{ icon: BookTemplate, label: "Templates" }];
 
 interface PageLayoutProps {
   activePage: string;

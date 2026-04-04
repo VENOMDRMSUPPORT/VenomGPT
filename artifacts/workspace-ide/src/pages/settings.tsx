@@ -27,7 +27,6 @@ const NAV_SECTIONS = [
 ];
 
 const LOCKED_NAV = [
-  { icon: FolderOpen, label: "Projects" },
   { icon: BookTemplate, label: "Templates" },
 ];
 
@@ -491,6 +490,7 @@ export default function SettingsPage() {
         {/* Nav */}
         <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 1, position: "relative" }}>
           <SidebarActiveBtn tm={tm} onClick={() => navigate("/ide")} />
+          <NavigableNavItem tm={tm} icon={FolderOpen} label="Projects" onClick={() => navigate("/projects")} />
           <NavigableNavItem tm={tm} icon={Plug} label="Integrations" onClick={() => navigate("/integrations")} />
           <NavigableNavItem tm={tm} icon={Settings} label="Settings" active onClick={() => navigate("/settings")} />
 

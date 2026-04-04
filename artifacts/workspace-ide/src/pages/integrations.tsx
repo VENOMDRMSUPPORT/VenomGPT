@@ -49,7 +49,6 @@ const ISSUE_LABELS: Record<ProviderIssueCategory, string> = {
 };
 
 const LOCKED_NAV = [
-  { icon: FolderOpen, label: "Projects" },
   { icon: BookTemplate, label: "Templates" },
 ];
 
@@ -691,6 +690,7 @@ export default function IntegrationsPage() {
           }}
         >
           <SidebarActiveBtn tm={tm} onClick={() => navigate("/ide")} />
+          <NavigableNavItem tm={tm} icon={FolderOpen} label="Projects" onClick={() => navigate("/projects")} />
           <NavigableNavItem tm={tm} icon={Plug} label="Integrations" active onClick={() => navigate("/integrations")} />
           <NavigableNavItem tm={tm} icon={Settings} label="Settings" onClick={() => navigate("/settings")} />
 
