@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, Menu, X, PanelLeftClose, PanelLeftOpen, Bell, User } from "lucide-react";
-import { VenomLogo } from "@/components/ui/venom-logo";
+import venomLogoMain from "@/assets/venom-logo-main.png";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 
@@ -19,7 +19,7 @@ const SUPERAGENTS_ITEM: NavItem = { id: "superagents", icon: Rocket, label: "Sup
 
 const LOWER_NAV: NavItem[] = [
   { id: "home", icon: Home, label: "Home", path: "/" },
-  { id: "projects", icon: LayoutGrid, label: "All apps", path: "/projects" },
+  { id: "apps", icon: LayoutGrid, label: "Apps", path: "/apps" },
   { id: "templates", icon: BookTemplate, label: "Templates", path: "/templates" },
   { id: "integrations", icon: Plug, label: "Integrations", path: "/integrations" },
   { id: "community", icon: Users, label: "Community", deferred: true },
@@ -34,92 +34,133 @@ interface PageLayoutProps {
   children: React.ReactNode;
 }
 
-function SidebarHeader({ tm, collapsed, onToggle }: { tm: VGTheme; collapsed: boolean; onToggle: () => void }) {
-  return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      padding: collapsed ? "12px 6px 10px" : "12px 12px 10px",
-      borderBottom: `1px solid ${tm.sidebarDivider}`,
-      justifyContent: "space-between",
-      flexShrink: 0,
-      transition: "padding 0.2s",
-    }}>
-      {/* Logo + name/slogan */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0, overflow: "hidden", flex: collapsed ? "unset" : 1 }}>
-        <div style={{
-          width: 30,
-          height: 30,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #8A2BE2 0%, #5b21b6 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <VenomLogo size={18} />
-        </div>
-        {!collapsed && (
-          <div style={{ minWidth: 0, overflow: "hidden" }}>
-            <div style={{
-              fontSize: 13.5,
-              fontWeight: 700,
-              color: tm.textPrimary,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              lineHeight: 1.2,
-            }}>
-              VenomGPT
-            </div>
-            <div style={{
-              fontSize: 10.5,
-              color: tm.textMuted,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              lineHeight: 1.3,
-              opacity: 0.8,
-            }}>
-              AI-powered workspace
-            </div>
-          </div>
-        )}
-      </div>
+function SidebarHeader({ tm, collapsed }: { tm: VGTheme; collapsed: boolean }) {
+  const [hov, setHov] = useState(false);
+  const [, navigate] = useLocation();
 
-      {/* Collapse toggle */}
-      <button
-        onClick={onToggle}
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+  return (
+    <button
+      onClick={() => navigate("/")}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      title="Go to Home"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: collapsed ? "10px 8px" : "10px 14px",
+        borderBottom: `1px solid ${tm.sidebarDivider}`,
+        flexShrink: 0,
+        justifyContent: collapsed ? "center" : "flex-start",
+        gap: 11,
+        width: "100%",
+        background: hov ? "rgba(138,43,226,0.10)" : "transparent",
+        border: "none",
+        borderBottom: `1px solid ${tm.sidebarDivider}`,
+        cursor: "pointer",
+        textAlign: "left",
+        transition: "background 0.18s, padding 0.2s",
+        minWidth: 0,
+      }}
+    >
+      {/* Logo circle */}
+      <motion.div
+        animate={{
+          filter: hov
+            ? "drop-shadow(0 0 10px rgba(138,43,226,0.85))"
+            : "drop-shadow(0 0 4px rgba(138,43,226,0.3))",
+        }}
+        transition={{ duration: 0.25 }}
         style={{
+          width: 34,
+          height: 34,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, rgba(138,43,226,0.25) 0%, rgba(91,33,182,0.35) 100%)",
+          border: `1.5px solid ${hov ? "rgba(138,43,226,0.65)" : "rgba(138,43,226,0.35)"}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: 26,
-          height: 26,
-          borderRadius: 6,
-          background: "transparent",
-          border: `1px solid ${tm.border}`,
-          color: tm.textMuted,
-          cursor: "pointer",
           flexShrink: 0,
-          transition: "background 0.15s, color 0.15s, border-color 0.15s",
-          padding: 0,
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "rgba(138,43,226,0.15)";
-          (e.currentTarget as HTMLButtonElement).style.color = tm.textSecondary;
-          (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(138,43,226,0.35)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-          (e.currentTarget as HTMLButtonElement).style.color = tm.textMuted;
-          (e.currentTarget as HTMLButtonElement).style.borderColor = tm.border;
+          overflow: "hidden",
+          transition: "border-color 0.18s",
         }}
       >
-        {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
-      </button>
-    </div>
+        <img
+          src={venomLogoMain}
+          alt="VenomGPT"
+          style={{ width: 28, height: 28, objectFit: "contain" }}
+        />
+      </motion.div>
+
+      {/* Name + slogan */}
+      {!collapsed && (
+        <div style={{ minWidth: 0, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+            <span style={{
+              fontSize: 14,
+              fontWeight: 800,
+              color: tm.textPrimary,
+              whiteSpace: "nowrap",
+              lineHeight: 1.2,
+              letterSpacing: "0.01em",
+            }}>
+              Venom
+            </span>
+            <span style={{
+              fontSize: 14,
+              fontWeight: 800,
+              color: "#a855f7",
+              whiteSpace: "nowrap",
+              lineHeight: 1.2,
+              letterSpacing: "0.01em",
+            }}>
+              GPT
+            </span>
+          </div>
+          <div style={{
+            fontSize: 10,
+            color: tm.textMuted,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            lineHeight: 1.3,
+            letterSpacing: "0.02em",
+            marginTop: 1,
+            opacity: 0.75,
+          }}>
+            AI-powered workspace
+          </div>
+        </div>
+      )}
+    </button>
+  );
+}
+
+function SidebarToggleBtn({ tm, collapsed, onToggle }: { tm: VGTheme; collapsed: boolean; onToggle: () => void }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onToggle}
+      title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 28,
+        height: 28,
+        borderRadius: 7,
+        background: hov ? "rgba(138,43,226,0.15)" : "transparent",
+        border: `1px solid ${hov ? "rgba(138,43,226,0.35)" : tm.border}`,
+        color: hov ? tm.textSecondary : tm.textMuted,
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "background 0.15s, color 0.15s, border-color 0.15s",
+        padding: 0,
+      }}
+    >
+      {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+    </button>
   );
 }
 
@@ -279,124 +320,96 @@ function SidebarNav({ tm, active, onNav }: { tm: VGTheme; active: string; onNav:
   );
 }
 
-function ThemeBtn({ isDark, tm, onToggle }: { isDark: boolean; tm: VGTheme; onToggle: () => void }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button
-      onClick={onToggle}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 9,
-        padding: "8px 12px",
-        borderRadius: 8,
-        background: hov ? tm.navHover : "transparent",
-        border: `1px solid ${hov ? tm.accentBorder : tm.border}`,
-        color: hov ? tm.textSecondary : tm.textMuted,
-        cursor: "pointer",
-        fontSize: 12,
-        fontWeight: 500,
-        width: "100%",
-        transition: "background 0.15s, border-color 0.15s, color 0.15s",
-        justifyContent: "center",
-      }}
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        {isDark
-          ? <motion.span key="s" initial={{ opacity: 0, rotate: -30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Sun size={14} /></motion.span>
-          : <motion.span key="m" initial={{ opacity: 0, rotate: 30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Moon size={14} /></motion.span>
-        }
-      </AnimatePresence>
-      <span className="pg-sidebar-text">{isDark ? "Light mode" : "Dark mode"}</span>
-    </button>
-  );
-}
-
-function SidebarFooter({ isDark, tm, onToggleTheme }: { isDark: boolean; tm: VGTheme; onToggleTheme: () => void }) {
+function PageHeaderActions({ isDark, tm, onToggleTheme }: { isDark: boolean; tm: VGTheme; onToggleTheme: () => void }) {
   const [notifHov, setNotifHov] = useState(false);
+  const [themeHov, setThemeHov] = useState(false);
+
+  const iconBtnStyle = (hov: boolean): React.CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 30,
+    height: 30,
+    borderRadius: 7,
+    background: hov ? tm.accentBg : "transparent",
+    border: `1px solid ${hov ? tm.accentBorder : "transparent"}`,
+    color: hov ? tm.textSecondary : tm.textMuted,
+    cursor: "pointer",
+    transition: "background 0.15s, border-color 0.15s, color 0.15s",
+    padding: 0,
+  });
 
   return (
-    <div style={{
-      padding: "8px 8px 14px",
-      borderTop: `1px solid ${tm.sidebarDivider}`,
-      display: "flex",
-      flexDirection: "column",
-      gap: 2,
-      flexShrink: 0,
-      transition: "border-color 0.3s",
-    }}>
-      {/* Profile row */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 9,
-        padding: "8px 12px",
-        borderRadius: 8,
-        cursor: "default",
-        userSelect: "none",
-        justifyContent: "center",
-      }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      {/* Notifications */}
+      <button
+        title="Notifications"
+        onMouseEnter={() => setNotifHov(true)}
+        onMouseLeave={() => setNotifHov(false)}
+        style={iconBtnStyle(notifHov)}
+      >
+        <Bell size={15} />
+      </button>
+
+      {/* Theme toggle */}
+      <button
+        title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+        onClick={onToggleTheme}
+        onMouseEnter={() => setThemeHov(true)}
+        onMouseLeave={() => setThemeHov(false)}
+        style={iconBtnStyle(themeHov)}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {isDark
+            ? <motion.span key="s" initial={{ opacity: 0, rotate: -30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Sun size={15} /></motion.span>
+            : <motion.span key="m" initial={{ opacity: 0, rotate: 30 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -30 }} transition={{ duration: 0.2 }} style={{ display: "flex" }}><Moon size={15} /></motion.span>
+          }
+        </AnimatePresence>
+      </button>
+
+      {/* Divider */}
+      <div style={{ width: 1, height: 16, background: tm.border, margin: "0 4px", flexShrink: 0 }} />
+
+      {/* Profile */}
+      <div
+        title="My Account"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          padding: "4px 8px 4px 4px",
+          borderRadius: 7,
+          cursor: "default",
+          userSelect: "none",
+        }}
+      >
         <div style={{
-          width: 26,
-          height: 26,
+          width: 24,
+          height: 24,
           borderRadius: "50%",
           background: "linear-gradient(135deg, #8A2BE2 0%, #5b21b6 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          fontSize: 11,
-          fontWeight: 700,
-          color: "#fff",
         }}>
-          <User size={13} />
+          <User size={12} style={{ color: "#fff" }} />
         </div>
-        <span className="pg-sidebar-text" style={{
-          flex: 1,
+        <span style={{
           fontSize: 12.5,
           fontWeight: 500,
           color: tm.textMuted,
           whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
         }}>
           My Account
         </span>
       </div>
-
-      {/* Theme toggle */}
-      <ThemeBtn isDark={isDark} tm={tm} onToggle={onToggleTheme} />
-
-      {/* Notifications row */}
-      <button
-        onMouseEnter={() => setNotifHov(true)}
-        onMouseLeave={() => setNotifHov(false)}
-        title="Notifications"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 9,
-          padding: "8px 12px",
-          borderRadius: 8,
-          background: notifHov ? tm.navHover : "transparent",
-          border: `1px solid ${notifHov ? tm.accentBorder : tm.border}`,
-          color: notifHov ? tm.textSecondary : tm.textMuted,
-          cursor: "pointer",
-          fontSize: 12,
-          fontWeight: 500,
-          width: "100%",
-          transition: "background 0.15s, border-color 0.15s, color 0.15s",
-          justifyContent: "center",
-        }}
-      >
-        <Bell size={14} style={{ flexShrink: 0 }} />
-        <span className="pg-sidebar-text">Notifications</span>
-      </button>
     </div>
   );
+}
+
+function SidebarFooter() {
+  return null;
 }
 
 export default function PageLayout({ activePage, header, headerRight, centered, fullHeight, children }: PageLayoutProps) {
@@ -431,9 +444,9 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
         }}
         data-collapsed={collapsed ? "true" : "false"}
       >
-        <SidebarHeader tm={tm} collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+        <SidebarHeader tm={tm} collapsed={collapsed} />
         <SidebarNav tm={tm} active={activePage} onNav={() => {}} />
-        <SidebarFooter isDark={isDark} tm={tm} onToggleTheme={() => setIsDark((d) => !d)} />
+        <SidebarFooter />
       </aside>
 
       {/* Mobile hamburger */}
@@ -447,9 +460,8 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, backdropFilter: "blur(4px)" }} />
             <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 230, zIndex: 95, display: "flex", flexDirection: "column", background: tm.sidebarBg, borderRight: `1px solid ${tm.sidebarDivider}`, overflowY: "auto" }}>
-              <SidebarHeader tm={tm} collapsed={false} onToggle={() => setMobileOpen(false)} />
+              <SidebarHeader tm={tm} collapsed={false} />
               <SidebarNav tm={tm} active={activePage} onNav={() => setMobileOpen(false)} />
-              <SidebarFooter isDark={isDark} tm={tm} onToggleTheme={() => setIsDark((d) => !d)} />
             </motion.aside>
           </>
         )}
@@ -458,12 +470,20 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
       {/* Main area */}
       <main style={{ position: "relative", zIndex: 1, flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {header && (
-          <div className="pg-header" style={{ height: 46, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: `1px solid ${tm.border}`, background: tm.glassPanelBg, backdropFilter: "blur(8px)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div className="pg-header" style={{ height: 52, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 0 12px", borderBottom: `1px solid ${tm.border}`, background: tm.glassPanelBg, backdropFilter: "blur(8px)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Mobile gap for hamburger, desktop sidebar toggle */}
               <div className="pg-header-gap" style={{ width: 0 }} />
+              <span className="pg-sidebar-toggle">
+                <SidebarToggleBtn tm={tm} collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+              </span>
+              <div style={{ width: 1, height: 16, background: tm.border, flexShrink: 0 }} />
               {header}
             </div>
-            {headerRight && <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{headerRight}</div>}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {headerRight}
+              <PageHeaderActions isDark={isDark} tm={tm} onToggleTheme={() => setIsDark((d) => !d)} />
+            </div>
           </div>
         )}
         {fullHeight ? (
@@ -480,7 +500,8 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
       <style>{`
         .pg-sidebar[data-collapsed="true"] .pg-sidebar-text { display: none !important; }
         @media (max-width: 1024px) { .pg-sidebar { width: 58px !important; min-width: 58px !important; max-width: 58px !important; } .pg-sidebar .pg-sidebar-text { display: none !important; } }
-        @media (max-width: 768px) { .pg-sidebar { display: none !important; } .pg-mobile-toggle { display: flex !important; } .pg-header-gap { width: 44px !important; } .pg-main-centered { padding: 20px !important; } }
+        @media (max-width: 768px) { .pg-sidebar { display: none !important; } .pg-mobile-toggle { display: flex !important; } .pg-header-gap { width: 44px !important; } .pg-sidebar-toggle { display: none !important; } .pg-main-centered { padding: 20px !important; } }
+        @media (min-width: 769px) { .pg-sidebar-toggle { display: inline-flex !important; } }
         @media (max-width: 480px) { .pg-main-centered { padding: 14px !important; } }
         .pg-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(138,43,226,0.3) transparent; }
         .pg-scroll::-webkit-scrollbar { width: 6px; } .pg-scroll::-webkit-scrollbar-track { background: transparent; } .pg-scroll::-webkit-scrollbar-thumb { background: rgba(138,43,226,0.3); border-radius: 3px; }

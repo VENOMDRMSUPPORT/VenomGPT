@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Paperclip, Sparkles, Circle, Camera, ChevronDown, Play, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight, AlertCircle, Check, X, Loader2 } from "lucide-react";
+import { Plus, Paperclip, Sparkles, Circle, Camera, ChevronDown, Play, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight, AlertCircle, Check, X, Loader2, Home } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -15,8 +15,8 @@ const SUGGESTIONS = [
   { icon: Database, label: "Design a data pipeline", prompt: "Design and implement a data pipeline that ingests, transforms, and stores records" },
 ];
 
-// Intentional placeholder data — replace with API call when Projects feature ships
-const RECENT_PROJECTS = [
+// Intentional placeholder data — replace with API call when Apps feature ships
+const RECENT_APPS = [
   { name: "venom-api", branch: "main", updated: "2 hours ago" },
   { name: "dashboard-ui", branch: "feat/auth", updated: "Yesterday" },
   { name: "ml-pipeline", branch: "main", updated: "3 days ago" },
@@ -292,7 +292,19 @@ export default function HomePage() {
   };
 
   return (
-    <PageLayout activePage="home" centered>
+    <PageLayout
+      activePage="home"
+      centered
+      header={
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <Home style={{ width: 17, height: 17, color: tm.accent, flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: tm.textPrimary, lineHeight: 1.2 }}>Home</span>
+            <span style={{ fontSize: 10.5, color: tm.textMuted, lineHeight: 1.2 }}>AI-powered workspace</span>
+          </div>
+        </div>
+      }
+    >
       <div style={{ width: "100%", maxWidth: 720, display: "flex", flexDirection: "column", alignItems: "center", gap: 40 }}>
 
         {/* Hero */}
@@ -490,10 +502,10 @@ export default function HomePage() {
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <p style={{ fontSize: 10.5, color: tm.sectionLabel, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600, margin: 0 }}>
-              Your recent projects
+              Your recent apps
             </p>
             <button
-              onClick={() => navigate("/projects")}
+              onClick={() => navigate("/apps")}
               onMouseEnter={() => setViewAllHovered(true)}
               onMouseLeave={() => setViewAllHovered(false)}
               style={{
@@ -509,7 +521,7 @@ export default function HomePage() {
             </button>
           </div>
           <div style={{ borderRadius: 12, background: tm.glassPanelBg, border: `1px solid ${tm.glassPanelBorder}`, backdropFilter: "blur(8px)", overflow: "hidden", padding: "4px 0" }}>
-            {RECENT_PROJECTS.map((p, i) => (
+            {RECENT_APPS.map((p, i) => (
               <RecentProjectRow key={p.name} {...p} tm={tm} delay={0.55 + i * 0.06} />
             ))}
           </div>

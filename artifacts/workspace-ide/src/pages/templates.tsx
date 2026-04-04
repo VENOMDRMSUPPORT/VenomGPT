@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Globe, Server, Bot, Smartphone, Database, Shield, Zap, BarChart2,
   MessageSquare, ShoppingCart, FileText, Cpu, Layout, Mail, BookOpen, Layers,
-  LayoutTemplate,
+  LayoutTemplate, BookTemplate,
 } from "lucide-react";
 import PageLayout from "@/components/layout/page-layout";
 import { useTheme } from "@/lib/theme-context";
@@ -414,42 +414,19 @@ export default function TemplatesPage() {
   };
 
   return (
-    <PageLayout activePage="templates">
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "32px 36px 52px", width: "100%" }}>
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          style={{ marginBottom: 28 }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: tm.accentBg,
-                border: `1px solid ${tm.accentBorder}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <LayoutTemplate style={{ width: 17, height: 17, color: tm.accent }} />
-            </div>
-            <div>
-              <h1 style={{ fontSize: 18, fontWeight: 800, color: tm.textPrimary, margin: 0, letterSpacing: "0.01em" }}>
-                Templates
-              </h1>
-              <p style={{ fontSize: 12, color: tm.textMuted, margin: 0, marginTop: 2 }}>
-                Start faster with a curated, production-ready template
-              </p>
-            </div>
+    <PageLayout
+      activePage="templates"
+      header={
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <BookTemplate style={{ width: 17, height: 17, color: tm.accent, flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: tm.textPrimary, lineHeight: 1.2 }}>Templates</span>
+            <span style={{ fontSize: 10.5, color: tm.textMuted, lineHeight: 1.2 }}>Start faster with a curated, production-ready template</span>
           </div>
-        </motion.div>
+        </div>
+      }
+    >
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "32px 36px 52px", width: "100%" }}>
 
         {/* Category filter */}
         <motion.div

@@ -233,11 +233,13 @@ export default function IntegrationsPage() {
     <PageLayout
       activePage="integrations"
       header={
-        <>
-          <Plug style={{ width: 16, height: 16, color: tm.accent }} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: tm.textPrimary }}>Integrations</span>
-          <span style={{ fontSize: 11, color: tm.textMuted, marginLeft: 4 }}>AI provider status and configuration</span>
-        </>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <Plug style={{ width: 17, height: 17, color: tm.accent, flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: tm.textPrimary, lineHeight: 1.2 }}>Integrations</span>
+            <span style={{ fontSize: 10.5, color: tm.textMuted, lineHeight: 1.2 }}>AI provider status and configuration</span>
+          </div>
+        </div>
       }
       headerRight={
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
