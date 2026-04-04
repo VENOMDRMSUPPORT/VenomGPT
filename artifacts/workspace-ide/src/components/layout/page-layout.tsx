@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, Menu, X, PanelLeftClose, PanelLeftOpen, Bell, User } from "lucide-react";
-import venomLogoMain from "@/assets/venom-logo-main.png";
+import venomLogoV2 from "@/assets/venom-logo-v2.png";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 
@@ -62,34 +62,18 @@ function SidebarHeader({ tm, collapsed }: { tm: VGTheme; collapsed: boolean }) {
         minWidth: 0,
       }}
     >
-      {/* Logo circle */}
-      <motion.div
-        animate={{
-          filter: hov
-            ? "drop-shadow(0 0 10px rgba(138,43,226,0.85))"
-            : "drop-shadow(0 0 4px rgba(138,43,226,0.3))",
-        }}
-        transition={{ duration: 0.25 }}
+      {/* Logo */}
+      <img
+        src={venomLogoV2}
+        alt="VenomGPT"
         style={{
           width: 34,
           height: 34,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, rgba(138,43,226,0.25) 0%, rgba(91,33,182,0.35) 100%)",
-          border: `1.5px solid ${hov ? "rgba(138,43,226,0.65)" : "rgba(138,43,226,0.35)"}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          objectFit: "contain",
           flexShrink: 0,
-          overflow: "hidden",
-          transition: "border-color 0.18s",
+          borderRadius: 4,
         }}
-      >
-        <img
-          src={venomLogoMain}
-          alt="VenomGPT"
-          style={{ width: 28, height: 28, objectFit: "contain" }}
-        />
-      </motion.div>
+      />
 
       {/* Name + slogan */}
       {!collapsed && (
