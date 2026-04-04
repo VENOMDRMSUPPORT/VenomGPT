@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, Menu, X, PanelLeftClose, PanelLeftOpen, Bell, User } from "lucide-react";
-import venomLogoV2 from "@/assets/venom-logo-v2.png";
+import venomLogoV2 from "@/assets/Futuristic_serpent_and_metallic_V_1775343892845.png";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 
@@ -45,70 +45,108 @@ function SidebarHeader({ tm, collapsed }: { tm: VGTheme; collapsed: boolean }) {
       onMouseLeave={() => setHov(false)}
       title="Go to Home"
       style={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         padding: collapsed ? "10px 8px" : "10px 14px",
-        borderBottom: `1px solid ${tm.sidebarDivider}`,
         flexShrink: 0,
         justifyContent: collapsed ? "center" : "flex-start",
         gap: 11,
         width: "100%",
-        background: hov ? "rgba(138,43,226,0.10)" : "transparent",
+        background: tm.sidebarHeaderBg,
         border: "none",
         borderBottom: `1px solid ${tm.sidebarDivider}`,
         cursor: "pointer",
         textAlign: "left",
         transition: "background 0.18s, padding 0.2s",
         minWidth: 0,
+        overflow: "hidden",
       }}
     >
-      {/* Logo */}
-      <img
-        src={venomLogoV2}
-        alt="VenomGPT"
+      {/* Header glow overlay — always on */}
+      <div
         style={{
-          width: 34,
-          height: 34,
-          objectFit: "contain",
-          flexShrink: 0,
+          position: "absolute",
+          inset: 0,
+          background: tm.sidebarHeaderGlow,
+          pointerEvents: "none",
+        }}
+      />
+      {/* Hover accent overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: tm.accentBgHover,
+          opacity: hov ? 1 : 0,
+          transition: "opacity 0.18s",
+          pointerEvents: "none",
         }}
       />
 
+      {/* Logo container — always dark so dark logo art sits cleanly in both themes */}
+      <div
+        style={{
+          position: "relative",
+          width: 36,
+          height: 36,
+          flexShrink: 0,
+          borderRadius: 8,
+          background: "rgba(10,8,28,0.92)",
+          border: "1px solid rgba(138,43,226,0.38)",
+          boxShadow: "0 0 14px rgba(138,43,226,0.30), inset 0 1px 0 rgba(255,255,255,0.06)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
+      >
+        <img
+          src={venomLogoV2}
+          alt="VenomGPT"
+          style={{
+            width: 32,
+            height: 32,
+            objectFit: "contain",
+            flexShrink: 0,
+          }}
+        />
+      </div>
+
       {/* Name + slogan */}
       {!collapsed && (
-        <div style={{ minWidth: 0, overflow: "hidden" }}>
+        <div style={{ position: "relative", minWidth: 0, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
             <span style={{
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 800,
               color: tm.textPrimary,
               whiteSpace: "nowrap",
               lineHeight: 1.2,
-              letterSpacing: "0.01em",
+              letterSpacing: "-0.01em",
             }}>
               Venom
             </span>
             <span style={{
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 800,
-              color: "#a855f7",
+              color: tm.accent,
               whiteSpace: "nowrap",
               lineHeight: 1.2,
-              letterSpacing: "0.01em",
+              letterSpacing: "-0.01em",
             }}>
               GPT
             </span>
           </div>
           <div style={{
-            fontSize: 10,
+            fontSize: 11,
             color: tm.textMuted,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
             lineHeight: 1.3,
             letterSpacing: "0.02em",
-            marginTop: 1,
-            opacity: 0.75,
+            marginTop: 2,
           }}>
             AI-powered workspace
           </div>
