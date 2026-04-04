@@ -19,6 +19,7 @@ interface PageLayoutProps {
   header?: React.ReactNode;
   headerRight?: React.ReactNode;
   centered?: boolean;
+  fullHeight?: boolean;
   children: React.ReactNode;
 }
 
@@ -87,7 +88,7 @@ function ThemeBtn({ isDark, tm, onToggle }: { isDark: boolean; tm: VGTheme; onTo
   );
 }
 
-export default function PageLayout({ activePage, header, headerRight, centered, children }: PageLayoutProps) {
+export default function PageLayout({ activePage, header, headerRight, centered, fullHeight, children }: PageLayoutProps) {
   const [isDark, setIsDark] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const tm = isDark ? darkTheme : lightTheme;
@@ -137,9 +138,15 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
               {headerRight && <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{headerRight}</div>}
             </div>
           )}
-          <div className={centered ? "pg-main-centered" : "pg-scroll"} style={{ flex: 1, minHeight: 0, ...(centered ? { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 36px 44px", overflow: "auto" } : { overflow: "auto", display: "flex", flexDirection: "column" }) }}>
-            {children}
-          </div>
+          {fullHeight ? (
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              {children}
+            </div>
+          ) : (
+            <div className={centered ? "pg-main-centered" : "pg-scroll"} style={{ flex: 1, minHeight: 0, ...(centered ? { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 36px 44px", overflow: "auto" } : { overflow: "auto", display: "flex", flexDirection: "column" }) }}>
+              {children}
+            </div>
+          )}
         </main>
 
         <style>{`
