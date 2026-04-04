@@ -308,14 +308,15 @@ export default function HomePage() {
                 <button type="button" style={iconBtnStyle()} title="Attach file" tabIndex={-1}>
                   <Paperclip size={14} />
                 </button>
-                <button type="button" style={iconBtnStyle()} title="AI actions" tabIndex={-1}>
-                  <Sparkles size={14} />
-                </button>
 
                 {/* Spacer */}
                 <div style={{ flex: 1 }} />
 
-                {/* Plan toggle */}
+                {/* Center: sparkle + Plan toggle */}
+                <button type="button" style={iconBtnStyle()} title="AI actions" tabIndex={-1}>
+                  <Sparkles size={14} />
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setPlanMode((p) => !p)}
