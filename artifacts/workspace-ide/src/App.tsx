@@ -7,6 +7,7 @@ import HomePage from "./pages/home";
 import SettingsPage from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
 import ProjectsPage from "./pages/projects";
+import TemplatesPage from "./pages/templates";
 import { ThemeProvider } from "@/lib/theme-context";
 
 const queryClient = new QueryClient({
@@ -26,6 +27,7 @@ function App() {
           <Switch>
             <Route path="/" component={HomePage} />
             <Route path="/projects" component={ProjectsPage} />
+            <Route path="/templates" component={TemplatesPage} />
             <Route path="/settings" component={SettingsPage} />
             <Route path="/integrations" component={IntegrationsPage} />
             <Route component={Workspace} />

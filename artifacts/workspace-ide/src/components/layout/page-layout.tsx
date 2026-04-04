@@ -11,7 +11,7 @@ const SUPERAGENTS_ITEM = { id: "superagents", icon: Rocket, label: "Superagents"
 const LOWER_NAV = [
   { id: "home", icon: Home, label: "Home", path: "/" },
   { id: "projects", icon: LayoutGrid, label: "All apps", path: "/projects" },
-  { id: "templates", icon: BookTemplate, label: "Templates", locked: true },
+  { id: "templates", icon: BookTemplate, label: "Templates", path: "/templates" },
   { id: "integrations", icon: Plug, label: "Integrations", path: "/integrations" },
   { id: "community", icon: Users, label: "Community", deferred: true },
 ];
