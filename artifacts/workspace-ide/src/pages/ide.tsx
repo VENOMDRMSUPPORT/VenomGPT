@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGetWorkspace } from '@workspace/api-client-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { AppRail } from '@/components/layout/app-rail';
+import { AppRail, APP_RAIL_HEADER_HEIGHT } from '@/components/layout/app-rail';
+import { CollapsedRailHeader } from '@/components/layout/collapsed-rail-header';
 import { WorkspaceHeader } from '@/components/layout/workspace-header';
 import { WorkspaceComposer } from '@/components/layout/workspace-composer';
 import { TaskConsole } from '@/components/panels/task-console';
@@ -35,6 +36,7 @@ export default function IDEPage() {
   const sidebarOpen     = useIdeStore(s => s.sidebarOpen);
   const explorerOpen    = useIdeStore(s => s.explorerOpen);
   const setExplorerOpen = useIdeStore(s => s.setExplorerOpen);
+  const appRailOpen     = useIdeStore(s => s.appRailOpen);
 
   const [isNarrow, setIsNarrow] = useState(() => window.innerWidth <= NARROW_BREAKPOINT);
   useEffect(() => {
@@ -94,7 +96,13 @@ export default function IDEPage() {
   const useResizableLayout = sidebarOpen && !isNarrow;
 
   return (
-    <div className="ide-shell">
+    <div
+      className="ide-shell"
+      style={!appRailOpen ? { paddingTop: APP_RAIL_HEADER_HEIGHT } : undefined}
+    >
+      {/* ── Fixed header when AppRail is closed ── */}
+      <CollapsedRailHeader />
+
       {/* ── Sidebar ── */}
       <AppRail
         onNavigateHome={() => setShowHome(true)}

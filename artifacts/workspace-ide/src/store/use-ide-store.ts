@@ -110,6 +110,8 @@ interface IdeState {
   // ── Layout ───────────────────────────────────────────────────────────────────
   sidebarOpen: boolean;
   explorerOpen: boolean;
+  /** Whether the AppRail (left sidebar) is open. Defaults to true. */
+  appRailOpen: boolean;
   /** Main content area view: 'editor' = normal editor, 'board' = full-width kanban */
   mainView: MainView;
   /** Prompt text pre-filled into the Task Console composer (set when navigating from board) */
@@ -172,6 +174,7 @@ interface IdeState {
   setMainView: (view: MainView) => void;
   setPendingNewTaskPrompt: (prompt: string | null) => void;
   setPendingSubmitPrompt: (prompt: string | null) => void;
+  toggleAppRail: () => void;
 
   setConnected: (connected: boolean) => void;
 }
@@ -198,6 +201,7 @@ export const useIdeStore = create<IdeState>((set) => ({
   boardView: 'list',
   sidebarOpen: true,
   explorerOpen: true,
+  appRailOpen: true,
   mainView: 'editor',
   pendingNewTaskPrompt: null,
   pendingSubmitPrompt: null,
@@ -417,6 +421,7 @@ export const useIdeStore = create<IdeState>((set) => ({
   setMainView: (view) => set({ mainView: view }),
   setPendingNewTaskPrompt: (prompt) => set({ pendingNewTaskPrompt: prompt }),
   setPendingSubmitPrompt: (prompt) => set({ pendingSubmitPrompt: prompt }),
+  toggleAppRail: () => set((state) => ({ appRailOpen: !state.appRailOpen })),
 
   setConnected: (connected) => set({ isConnected: connected }),
 }));

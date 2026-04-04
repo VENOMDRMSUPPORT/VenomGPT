@@ -8,7 +8,9 @@ import {
   Plug,
   Users,
   ChevronDown,
+  PanelLeftClose,
 } from 'lucide-react';
+import { useIdeStore } from '@/store/use-ide-store';
 
 interface AppRailProps {
   onNavigateHome: () => void;
@@ -53,8 +55,14 @@ function SecondaryNavItem({ icon: Icon, label, active = false, onClick }: NavIte
   );
 }
 
+export const APP_RAIL_HEADER_HEIGHT = 44;
+
 export function AppRail({ onNavigateHome }: AppRailProps) {
   const [, navigate] = useLocation();
+  const appRailOpen = useIdeStore(s => s.appRailOpen);
+  const toggleAppRail = useIdeStore(s => s.toggleAppRail);
+
+  if (!appRailOpen) return null;
 
   return (
     <div
@@ -77,7 +85,10 @@ export function AppRail({ onNavigateHome }: AppRailProps) {
       />
 
       {/* Workspace header */}
-      <div className="relative z-10 flex items-center gap-2.5 px-3 py-3 border-b border-white/[0.06]">
+      <div
+        className="relative z-10 flex items-center gap-2.5 px-3 border-b border-white/[0.06]"
+        style={{ height: APP_RAIL_HEADER_HEIGHT }}
+      >
         {/* Avatar */}
         <div
           className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold text-white"
@@ -89,6 +100,15 @@ export function AppRail({ onNavigateHome }: AppRailProps) {
           Islam's Workspace
         </span>
         <ChevronDown className="w-3.5 h-3.5 text-[#6b6f84] shrink-0" />
+
+        {/* Collapse sidebar button */}
+        <button
+          onClick={toggleAppRail}
+          title="Collapse sidebar"
+          className="w-6 h-6 flex items-center justify-center rounded text-[#6b6f84] hover:text-[#c0c4d6] hover:bg-white/5 transition-colors shrink-0"
+        >
+          <PanelLeftClose className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Primary nav */}
