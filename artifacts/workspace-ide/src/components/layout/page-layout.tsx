@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Lock, LayoutGrid, Settings, Plug, FolderOpen, BookTemplate, ChevronRight, Menu, X } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
-import { type VGTheme, darkTheme, lightTheme } from "@/lib/theme";
-import { ThemeCtx } from "@/lib/theme-context";
+import { type VGTheme, darkTheme } from "@/lib/theme";
+import { useTheme } from "@/lib/theme-context";
 
 const NAV = [
   { id: "ide", icon: LayoutGrid, label: "Open IDE", path: "/ide", primary: true },
@@ -89,76 +89,73 @@ function ThemeBtn({ isDark, tm, onToggle }: { isDark: boolean; tm: VGTheme; onTo
 }
 
 export default function PageLayout({ activePage, header, headerRight, centered, fullHeight, children }: PageLayoutProps) {
-  const [isDark, setIsDark] = useState(true);
+  const { isDark, tm, setIsDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const tm = isDark ? darkTheme : lightTheme;
 
   return (
-    <ThemeCtx.Provider value={{ isDark, tm }}>
-      <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", background: tm.bgBase, color: tm.textPrimary, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", position: "relative", transition: "background 0.3s, color 0.3s" }}>
-        <div style={{ position: "absolute", inset: 0, background: tm.glassMesh, pointerEvents: "none", zIndex: 0 }} />
-        <div style={{ position: "absolute", inset: 0, background: tm.atmosphericGlow, pointerEvents: "none", zIndex: 0 }} />
+    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", background: tm.bgBase, color: tm.textPrimary, fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", position: "relative", transition: "background 0.3s, color 0.3s" }}>
+      <div style={{ position: "absolute", inset: 0, background: tm.glassMesh, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "absolute", inset: 0, background: tm.atmosphericGlow, pointerEvents: "none", zIndex: 0 }} />
 
-        {/* Desktop sidebar */}
-        <aside className="pg-sidebar" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", width: 240, minWidth: 240, maxWidth: 240, height: "100%", borderRight: `1px solid ${tm.sidebarDivider}`, background: tm.sidebarBg, flexShrink: 0, overflowX: "hidden", transition: "background 0.3s, border-color 0.3s" }}>
-          <SidebarInner tm={tm} active={activePage} onNav={() => {}} />
-          <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}`, transition: "border-color 0.3s" }}>
-            <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
-          </div>
-        </aside>
+      {/* Desktop sidebar */}
+      <aside className="pg-sidebar" style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", width: 240, minWidth: 240, maxWidth: 240, height: "100%", borderRight: `1px solid ${tm.sidebarDivider}`, background: tm.sidebarBg, flexShrink: 0, overflowX: "hidden", transition: "background 0.3s, border-color 0.3s" }}>
+        <SidebarInner tm={tm} active={activePage} onNav={() => {}} />
+        <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}`, transition: "border-color 0.3s" }}>
+          <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
+        </div>
+      </aside>
 
-        {/* Mobile hamburger */}
-        <button className="pg-mobile-toggle" onClick={() => setMobileOpen((o) => !o)} style={{ position: "fixed", top: 10, left: 10, zIndex: 80, width: 40, height: 40, borderRadius: 10, background: tm.glassPanelBg, border: `1px solid ${tm.accentBorder}`, backdropFilter: "blur(12px)", display: "none", alignItems: "center", justifyContent: "center", cursor: "pointer", color: tm.textPrimary, transition: "background 0.15s" }}>
-          {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
+      {/* Mobile hamburger */}
+      <button className="pg-mobile-toggle" onClick={() => setMobileOpen((o) => !o)} style={{ position: "fixed", top: 10, left: 10, zIndex: 80, width: 40, height: 40, borderRadius: 10, background: tm.glassPanelBg, border: `1px solid ${tm.accentBorder}`, backdropFilter: "blur(12px)", display: "none", alignItems: "center", justifyContent: "center", cursor: "pointer", color: tm.textPrimary, transition: "background 0.15s" }}>
+        {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+      </button>
 
-        {/* Mobile overlay */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, backdropFilter: "blur(4px)" }} />
-              <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 260, zIndex: 95, display: "flex", flexDirection: "column", background: tm.sidebarBg, borderRight: `1px solid ${tm.sidebarDivider}`, overflowY: "auto" }}>
-                <SidebarInner tm={tm} active={activePage} onNav={() => setMobileOpen(false)} />
-                <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}` }}>
-                  <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
-                </div>
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* Main area */}
-        <main style={{ position: "relative", zIndex: 1, flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {header && (
-            <div className="pg-header" style={{ height: 46, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: `1px solid ${tm.border}`, background: tm.glassPanelBg, backdropFilter: "blur(8px)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div className="pg-header-gap" style={{ width: 0 }} />
-                {header}
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, backdropFilter: "blur(4px)" }} />
+            <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 260, zIndex: 95, display: "flex", flexDirection: "column", background: tm.sidebarBg, borderRight: `1px solid ${tm.sidebarDivider}`, overflowY: "auto" }}>
+              <SidebarInner tm={tm} active={activePage} onNav={() => setMobileOpen(false)} />
+              <div style={{ padding: "10px 8px 16px", borderTop: `1px solid ${tm.sidebarDivider}` }}>
+                <ThemeBtn isDark={isDark} tm={tm} onToggle={() => setIsDark((d) => !d)} />
               </div>
-              {headerRight && <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{headerRight}</div>}
-            </div>
-          )}
-          {fullHeight ? (
-            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              {children}
-            </div>
-          ) : (
-            <div className={centered ? "pg-main-centered" : "pg-scroll"} style={{ flex: 1, minHeight: 0, ...(centered ? { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 36px 44px", overflow: "auto" } : { overflow: "auto", display: "flex", flexDirection: "column" }) }}>
-              {children}
-            </div>
-          )}
-        </main>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
-        <style>{`
-          @media (max-width: 1024px) { .pg-sidebar { width: 58px !important; min-width: 58px !important; max-width: 58px !important; } .pg-sidebar .pg-sidebar-text { display: none !important; } }
-          @media (max-width: 768px) { .pg-sidebar { display: none !important; } .pg-mobile-toggle { display: flex !important; } .pg-header-gap { width: 44px !important; } .pg-main-centered { padding: 20px !important; } }
-          @media (max-width: 480px) { .pg-main-centered { padding: 14px !important; } }
-          .pg-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(138,43,226,0.3) transparent; }
-          .pg-scroll::-webkit-scrollbar { width: 6px; } .pg-scroll::-webkit-scrollbar-track { background: transparent; } .pg-scroll::-webkit-scrollbar-thumb { background: rgba(138,43,226,0.3); border-radius: 3px; }
-          textarea::placeholder { color: inherit; opacity: 0.38; }
-          @keyframes spin { to { transform: rotate(360deg); } }
-        `}</style>
-      </div>
-    </ThemeCtx.Provider>
+      {/* Main area */}
+      <main style={{ position: "relative", zIndex: 1, flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {header && (
+          <div className="pg-header" style={{ height: 46, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: `1px solid ${tm.border}`, background: tm.glassPanelBg, backdropFilter: "blur(8px)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div className="pg-header-gap" style={{ width: 0 }} />
+              {header}
+            </div>
+            {headerRight && <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{headerRight}</div>}
+          </div>
+        )}
+        {fullHeight ? (
+          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            {children}
+          </div>
+        ) : (
+          <div className={centered ? "pg-main-centered" : "pg-scroll"} style={{ flex: 1, minHeight: 0, ...(centered ? { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 36px 44px", overflow: "auto" } : { overflow: "auto", display: "flex", flexDirection: "column" }) }}>
+            {children}
+          </div>
+        )}
+      </main>
+
+      <style>{`
+        @media (max-width: 1024px) { .pg-sidebar { width: 58px !important; min-width: 58px !important; max-width: 58px !important; } .pg-sidebar .pg-sidebar-text { display: none !important; } }
+        @media (max-width: 768px) { .pg-sidebar { display: none !important; } .pg-mobile-toggle { display: flex !important; } .pg-header-gap { width: 44px !important; } .pg-main-centered { padding: 20px !important; } }
+        @media (max-width: 480px) { .pg-main-centered { padding: 14px !important; } }
+        .pg-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(138,43,226,0.3) transparent; }
+        .pg-scroll::-webkit-scrollbar { width: 6px; } .pg-scroll::-webkit-scrollbar-track { background: transparent; } .pg-scroll::-webkit-scrollbar-thumb { background: rgba(138,43,226,0.3); border-radius: 3px; }
+        textarea::placeholder { color: inherit; opacity: 0.38; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
   );
 }

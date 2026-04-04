@@ -7,6 +7,7 @@ import HomePage from "./pages/home";
 import SettingsPage from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
 import ProjectsPage from "./pages/projects";
+import { ThemeProvider } from "@/lib/theme-context";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,18 +20,20 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/projects" component={ProjectsPage} />
-          <Route path="/settings" component={SettingsPage} />
-          <Route path="/integrations" component={IntegrationsPage} />
-          <Route component={Workspace} />
-        </Switch>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Switch>
+            <Route path="/" component={HomePage} />
+            <Route path="/projects" component={ProjectsPage} />
+            <Route path="/settings" component={SettingsPage} />
+            <Route path="/integrations" component={IntegrationsPage} />
+            <Route component={Workspace} />
+          </Switch>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
