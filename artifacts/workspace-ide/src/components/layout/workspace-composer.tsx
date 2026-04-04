@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Play, Square, X, Sparkles, AlertCircle, Plus, Paperclip, Circle, Camera, ChevronDown } from 'lucide-react';
+import { Play, Square, X, Sparkles, AlertCircle, Plus, Paperclip, Circle, Camera, ChevronDown, Loader2, Check } from 'lucide-react';
 import { useStartAgentTask } from '@workspace/api-client-react';
 import { getListAgentTasksQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIdeStore } from '@/store/use-ide-store';
 import { compressImage } from '@/lib/imageUtils';
+import { useOptimizePrompt } from '@/hooks/use-optimize-prompt';
 
 const MAX_IMAGES = 5;
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
@@ -36,9 +37,10 @@ export function WorkspaceComposer() {
   const [submitError, setSubmitError]     = useState<string | null>(null);
   const [isFocused, setIsFocused]         = useState(false);
   const [planMode, setPlanMode]           = useState(false);
-  const [isOptimized, setIsOptimized]     = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingPromptRef = useRef<string>('');
+
+  const { optimize, isOptimizing, optimizedResult, clearResult, error: optimizeError } = useOptimizePrompt();
 
   const { mutate: startTask, isPending } = useStartAgentTask({
     mutation: {
@@ -46,7 +48,7 @@ export function WorkspaceComposer() {
         startActiveTask(data.taskId, pendingPromptRef.current);
         setPendingSubmitPrompt(null);
         setPrompt('');
-        setIsOptimized(false);
+        clearResult();
         setAttachedImages([]);
         setImageError(null);
         setSubmitError(null);
@@ -60,7 +62,7 @@ export function WorkspaceComposer() {
     },
   });
 
-  const disabled = isPending || isRunning;
+  const disabled = isPending || isRunning || isOptimizing;
   const canSubmit = prompt.trim().length > 0 && !disabled;
 
   const persistAsset = useCallback(async (content: string, filename: string) => {
@@ -117,14 +119,20 @@ export function WorkspaceComposer() {
 
   const handleOptimize = useCallback(() => {
     const trimmed = prompt.trim();
-    if (!trimmed) return;
-    if (trimmed.startsWith('Task:')) return;
-    const withoutTrailingPeriod = trimmed.replace(/\.\s*$/, '');
-    const capitalized = withoutTrailingPeriod.charAt(0).toUpperCase() + withoutTrailingPeriod.slice(1);
-    const optimized = `Task: ${capitalized}.\n\nPlease implement this carefully, ensuring the solution is complete, well-structured, and handles edge cases. Follow existing code conventions and patterns in the project. Provide clear, working code without placeholders.`;
-    setPrompt(optimized);
-    setIsOptimized(true);
-  }, [prompt]);
+    if (!trimmed || disabled || isOptimizing) return;
+    void optimize(trimmed);
+  }, [prompt, disabled, isOptimizing, optimize]);
+
+  const handleAcceptOptimized = useCallback(() => {
+    if (optimizedResult) {
+      setPrompt(optimizedResult);
+    }
+    clearResult();
+  }, [optimizedResult, clearResult]);
+
+  const handleDismissOptimized = useCallback(() => {
+    clearResult();
+  }, [clearResult]);
 
   const handleCancel = useCallback(async () => {
     if (!activeTaskId) return;
@@ -176,7 +184,7 @@ export function WorkspaceComposer() {
 
   const handleSuggestedPrompt = (text: string) => {
     setPrompt(text);
-    setIsOptimized(false);
+    clearResult();
   };
 
   useEffect(() => {
@@ -223,15 +231,62 @@ export function WorkspaceComposer() {
           {/* Textarea */}
           <textarea
             value={prompt}
-            onChange={e => { setPrompt(e.target.value); setIsOptimized(false); }}
+            onChange={e => { setPrompt(e.target.value); clearResult(); }}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={isRunning ? 'Agent is working…' : 'Ask questions, plan your work...'}
             className="w-full min-h-[72px] max-h-[140px] bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none resize-none leading-relaxed"
-            disabled={disabled}
+            disabled={disabled || isOptimizing}
           />
+
+          {/* Optimize preview panel */}
+          {(optimizedResult || optimizeError) && (
+            <div className="mx-2.5 mb-2 rounded-lg border border-white/10 overflow-hidden">
+              {optimizedResult && (
+                <>
+                  <div className="px-3 py-1.5 bg-white/4 border-b border-white/8 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-primary shrink-0" />
+                    <span className="text-[11px] font-medium text-primary">Optimized prompt</span>
+                  </div>
+                  <div className="px-3 py-2 text-[12px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {optimizedResult}
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-2 border-t border-white/8 bg-white/2">
+                    <button
+                      type="button"
+                      onClick={handleAcceptOptimized}
+                      className="flex items-center gap-1 h-6 px-2.5 rounded-md text-[11px] font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all"
+                    >
+                      <Check className="w-3 h-3" />
+                      Use this
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDismissOptimized}
+                      className="flex items-center gap-1 h-6 px-2.5 rounded-md text-[11px] font-medium text-muted-foreground/60 border border-white/10 hover:text-foreground hover:bg-white/8 transition-all"
+                    >
+                      Keep original
+                    </button>
+                  </div>
+                </>
+              )}
+              {optimizeError && (
+                <div className="flex items-start gap-2 px-3 py-2">
+                  <AlertCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+                  <span className="text-[11px] text-red-400 leading-relaxed flex-1">{optimizeError}</span>
+                  <button
+                    type="button"
+                    onClick={handleDismissOptimized}
+                    className="text-red-400/50 hover:text-red-400 transition-colors shrink-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Suggested prompts — hidden when task is running */}
           {!isRunning ? (
@@ -280,16 +335,19 @@ export function WorkspaceComposer() {
             <button
               type="button"
               onClick={handleOptimize}
-              disabled={!prompt.trim() || disabled}
+              disabled={!prompt.trim() || disabled || isOptimizing}
               className={`h-7 px-2 rounded-lg text-[11px] font-medium flex items-center gap-1 transition-all border ${
-                isOptimized
+                optimizedResult
                   ? 'text-primary bg-primary/15 border-primary/30'
                   : 'text-muted-foreground/50 hover:text-foreground hover:bg-white/8 border-transparent'
               } disabled:opacity-30`}
               title="Optimize prompt"
             >
-              <Sparkles className="w-3 h-3" />
-              Optimize
+              {isOptimizing
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <Sparkles className="w-3 h-3" />
+              }
+              {isOptimizing ? 'Optimizing…' : 'Optimize'}
             </button>
 
             <div className="flex-1" />

@@ -11,6 +11,7 @@ import runtimeRouter from "./runtime.js";
 import providerDiagnosticsRouter from "./providerDiagnostics.js";
 import providerRegistryRouter from "./providerRegistry.js";
 import taskBoardRouter from "./taskBoard.js";
+import promptOptimizeRouter from "./promptOptimize.js";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(runtimeRouter);
 router.use(providerDiagnosticsRouter);
 router.use(providerRegistryRouter);
 router.use(taskBoardRouter);
+router.use(promptOptimizeRouter);
 
 export default router;

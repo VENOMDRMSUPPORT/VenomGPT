@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Paperclip, Sparkles, Circle, Camera, ChevronDown, Play, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight } from "lucide-react";
+import { Plus, Paperclip, Sparkles, Circle, Camera, ChevronDown, Play, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight, AlertCircle, Check, X, Loader2 } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import PageLayout from "@/components/layout/page-layout";
 import { useIdeStore } from "@/store/use-ide-store";
+import { useOptimizePrompt } from "@/hooks/use-optimize-prompt";
 
 const SUGGESTIONS = [
   { icon: Code2, label: "Build a full-stack app", prompt: "Build a full-stack web app with auth, database, and a REST API" },
@@ -191,20 +192,39 @@ export default function HomePage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isFilled = !!prompt.trim();
 
+  const { optimize, isOptimizing, optimizedResult, clearResult, error: optimizeError } = useOptimizePrompt();
+
   const PLAN_PREFIX = "Think step-by-step and write a thorough plan before implementing anything. Show the plan first, then proceed.\n\n";
 
   const doSubmit = () => {
     const text = prompt.trim();
-    if (!text) return;
+    if (!text || isOptimizing) return;
     const full = planMode ? PLAN_PREFIX + text : text;
     useIdeStore.getState().setPendingNewTaskPrompt(full);
     navigate("/ide");
   };
 
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); doSubmit(); };
-  const handleSuggestion = (p: string) => { setPrompt(p); textareaRef.current?.focus(); };
+  const handleSuggestion = (p: string) => { setPrompt(p); clearResult(); textareaRef.current?.focus(); };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSubmit(); }
+  };
+
+  const handleOptimize = () => {
+    const trimmed = prompt.trim();
+    if (!trimmed || isOptimizing) return;
+    void optimize(trimmed);
+  };
+
+  const handleAcceptOptimized = () => {
+    if (optimizedResult) {
+      setPrompt(optimizedResult);
+    }
+    clearResult();
+  };
+
+  const handleDismissOptimized = () => {
+    clearResult();
   };
 
   const inputPanelStyle: React.CSSProperties = {
@@ -222,6 +242,8 @@ export default function HomePage() {
     width: "100%", padding: "20px 22px 14px",
     background: "transparent", border: "none", outline: "none",
     resize: "none", color: tm.textPrimary, fontSize: 14.5, lineHeight: 1.65, fontFamily: "inherit",
+    opacity: isOptimizing ? 0.5 : 1,
+    transition: "opacity 0.15s",
   };
 
   const controlBarStyle: React.CSSProperties = {
@@ -247,13 +269,24 @@ export default function HomePage() {
     transition: "background 0.15s, border-color 0.15s, color 0.15s",
   };
 
+  const sparkleBtnStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    width: 28, height: 28, borderRadius: 8, border: "none",
+    cursor: isFilled && !isOptimizing ? "pointer" : "not-allowed",
+    background: optimizedResult ? `${tm.accent}22` : "transparent",
+    color: optimizedResult ? tm.accent : isFilled ? tm.textDimmed : `${tm.textDimmed}55`,
+    transition: "background 0.15s, color 0.15s",
+    opacity: isFilled ? 1 : 0.4,
+  };
+
+  const canPlay = isFilled && !isOptimizing;
   const playBtnStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", justifyContent: "center",
     width: 32, height: 32, borderRadius: "50%", border: "none",
-    background: isFilled ? tm.accent : `${tm.accent}44`,
+    background: canPlay ? tm.accent : `${tm.accent}44`,
     color: "#fff",
-    cursor: isFilled ? "pointer" : "not-allowed",
-    boxShadow: isFilled ? `0 2px 14px ${tm.accentShadow}` : "none",
+    cursor: canPlay ? "pointer" : "not-allowed",
+    boxShadow: canPlay ? `0 2px 14px ${tm.accentShadow}` : "none",
     transition: "background 0.15s, box-shadow 0.15s, transform 0.1s",
     transform: "none",
   };
@@ -292,14 +325,88 @@ export default function HomePage() {
               <textarea
                 ref={textareaRef}
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={(e) => { setPrompt(e.target.value); clearResult(); }}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 placeholder="Describe your project or ask VenomGPT to build something..."
                 rows={4}
                 style={textareaStyle}
+                disabled={isOptimizing}
               />
+
+              {/* Optimize inline preview */}
+              {(optimizedResult || optimizeError) && (
+                <div style={{
+                  margin: "0 10px 10px",
+                  borderRadius: 10,
+                  border: `1px solid ${tm.glassPanelBorder}`,
+                  overflow: "hidden",
+                  background: tm.glassPanelBg,
+                }}>
+                  {optimizedResult && (
+                    <>
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 6,
+                        padding: "8px 12px", borderBottom: `1px solid ${tm.glassPanelBorder}`,
+                        background: `${tm.accent}11`,
+                      }}>
+                        <Sparkles size={12} style={{ color: tm.accent, flexShrink: 0 }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: tm.accent }}>Optimized prompt</span>
+                      </div>
+                      <div style={{ padding: "10px 12px", fontSize: 12.5, color: tm.textSecondary, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                        {optimizedResult}
+                      </div>
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "8px 12px", borderTop: `1px solid ${tm.glassPanelBorder}`,
+                        background: `${tm.accent}08`,
+                      }}>
+                        <button
+                          type="button"
+                          onClick={handleAcceptOptimized}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 4,
+                            height: 26, padding: "0 10px", borderRadius: 7, border: `1px solid ${tm.accent}55`,
+                            background: `${tm.accent}22`, color: tm.accent,
+                            fontSize: 11, fontWeight: 600, cursor: "pointer",
+                          }}
+                        >
+                          <Check size={11} />
+                          Use this
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDismissOptimized}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 4,
+                            height: 26, padding: "0 10px", borderRadius: 7,
+                            border: `1px solid ${tm.glassPanelBorder}`,
+                            background: "transparent", color: tm.textDimmed,
+                            fontSize: 11, fontWeight: 500, cursor: "pointer",
+                          }}
+                        >
+                          Keep original
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {optimizeError && (
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 12px" }}>
+                      <AlertCircle size={13} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
+                      <span style={{ fontSize: 12, color: "#f87171", lineHeight: 1.5, flex: 1 }}>{optimizeError}</span>
+                      <button
+                        type="button"
+                        onClick={handleDismissOptimized}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", opacity: 0.6, padding: 0 }}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <style>{`
                 .home-ctl-btn { background: transparent !important; }
                 .home-ctl-btn:hover { background: rgba(255,255,255,0.08) !important; color: rgba(255,255,255,0.88) !important; }
@@ -318,8 +425,14 @@ export default function HomePage() {
                 <div style={{ flex: 1 }} />
 
                 {/* Center: sparkle + Plan toggle */}
-                <button type="button" style={iconBtnStyle()} className="home-ctl-btn" title="AI actions" tabIndex={-1}>
-                  <Sparkles size={14} />
+                <button
+                  type="button"
+                  onClick={handleOptimize}
+                  disabled={!isFilled || isOptimizing}
+                  style={sparkleBtnStyle}
+                  title="Optimize prompt"
+                >
+                  {isOptimizing ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Sparkles size={14} />}
                 </button>
 
                 <button
@@ -342,12 +455,13 @@ export default function HomePage() {
                 </button>
 
                 {/* Play / submit */}
-                <button type="submit" disabled={!isFilled} style={playBtnStyle} className="home-play-btn" title="Send (Enter)">
+                <button type="submit" disabled={!canPlay} style={playBtnStyle} className="home-play-btn" title="Send (Enter)">
                   <Play size={15} style={{ fill: "currentColor" }} />
                 </button>
               </div>
             </div>
           </form>
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </motion.div>
 
         {/* Suggested prompts */}
