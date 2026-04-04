@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import { Send, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Plus, Paperclip, Sparkles, Circle, Camera, ChevronDown, Play, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import PageLayout from "@/components/layout/page-layout";
+import { useIdeStore } from "@/store/use-ide-store";
 
 const SUGGESTIONS = [
   { icon: Code2, label: "Build a full-stack app", prompt: "Build a full-stack web app with auth, database, and a REST API" },
@@ -184,16 +185,26 @@ export default function HomePage() {
   const { tm } = useTheme();
   const [prompt, setPrompt] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
-  const [sendHovered, setSendHovered] = useState(false);
+  const [planMode, setPlanMode] = useState(false);
   const [viewAllHovered, setViewAllHovered] = useState(false);
   const [, navigate] = useLocation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isFilled = !!prompt.trim();
 
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); if (prompt.trim()) navigate("/ide"); };
+  const PLAN_PREFIX = "Think step-by-step and write a thorough plan before implementing anything. Show the plan first, then proceed.\n\n";
+
+  const doSubmit = () => {
+    const text = prompt.trim();
+    if (!text) return;
+    const full = planMode ? PLAN_PREFIX + text : text;
+    useIdeStore.getState().setPendingNewTaskPrompt(full);
+    navigate("/ide");
+  };
+
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); doSubmit(); };
   const handleSuggestion = (p: string) => { setPrompt(p); textareaRef.current?.focus(); };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (prompt.trim()) navigate("/ide"); }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSubmit(); }
   };
 
   const inputPanelStyle: React.CSSProperties = {
@@ -213,22 +224,38 @@ export default function HomePage() {
     resize: "none", color: tm.textPrimary, fontSize: 14.5, lineHeight: 1.65, fontFamily: "inherit",
   };
 
-  const inputFooterStyle: React.CSSProperties = {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "10px 16px 12px", borderTop: `1px solid ${tm.border}`, background: tm.accentBg,
+  const controlBarStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 2,
+    padding: "4px 8px 6px", borderTop: `1px solid ${tm.border}`, background: tm.accentBg,
   };
 
-  const sendBtnStyle: React.CSSProperties = {
-    display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 9,
-    background: isFilled ? (sendHovered ? tm.sendBtnHover : tm.accent) : "transparent",
-    border: `1.5px solid ${isFilled ? "transparent" : tm.accentBorder}`,
-    color: isFilled ? "#fff" : tm.textDimmed,
-    cursor: isFilled ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600,
-    transition: "background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s",
-    transform: isFilled && sendHovered ? "translateY(-1px)" : "none",
-    boxShadow: isFilled
-      ? sendHovered ? `0 4px 20px ${tm.accentShadow}` : `0 2px 12px ${tm.logoContainerShadow}`
-      : "none",
+  const iconBtnStyle = (active = false): React.CSSProperties => ({
+    display: "flex", alignItems: "center", justifyContent: "center",
+    width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+    background: active ? `${tm.accent}22` : "transparent",
+    color: active ? tm.accent : tm.textDimmed,
+    transition: "background 0.15s, color 0.15s",
+  });
+
+  const planBtnStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 4,
+    height: 28, padding: "0 8px", borderRadius: 8, cursor: "pointer",
+    fontSize: 11, fontWeight: 500,
+    background: planMode ? `${tm.accent}22` : "transparent",
+    border: `1px solid ${planMode ? `${tm.accent}55` : "transparent"}`,
+    color: planMode ? tm.accent : tm.textDimmed,
+    transition: "background 0.15s, border-color 0.15s, color 0.15s",
+  };
+
+  const playBtnStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    width: 32, height: 32, borderRadius: "50%", border: "none",
+    background: isFilled ? tm.accent : `${tm.accent}44`,
+    color: "#fff",
+    cursor: isFilled ? "pointer" : "not-allowed",
+    boxShadow: isFilled ? `0 2px 14px ${tm.accentShadow}` : "none",
+    transition: "background 0.15s, box-shadow 0.15s, transform 0.1s",
+    transform: "none",
   };
 
   return (
@@ -273,18 +300,44 @@ export default function HomePage() {
                 rows={4}
                 style={textareaStyle}
               />
-              <div style={inputFooterStyle}>
-                <span style={{ fontSize: 11, color: tm.textDimmed, letterSpacing: "0.02em" }}>
-                  Enter to send. Shift+Enter for new line
-                </span>
+              <div style={controlBarStyle}>
+                {/* Left: add + attach */}
+                <button type="button" style={iconBtnStyle()} title="Add" tabIndex={-1}>
+                  <Plus size={14} />
+                </button>
+                <button type="button" style={iconBtnStyle()} title="Attach file" tabIndex={-1}>
+                  <Paperclip size={14} />
+                </button>
+                <button type="button" style={iconBtnStyle()} title="AI actions" tabIndex={-1}>
+                  <Sparkles size={14} />
+                </button>
+
+                {/* Spacer */}
+                <div style={{ flex: 1 }} />
+
+                {/* Plan toggle */}
                 <button
-                  type="submit"
-                  disabled={!isFilled}
-                  onMouseEnter={() => setSendHovered(true)}
-                  onMouseLeave={() => setSendHovered(false)}
-                  style={sendBtnStyle}
+                  type="button"
+                  onClick={() => setPlanMode((p) => !p)}
+                  style={planBtnStyle}
+                  title="Plan mode — think before building"
                 >
-                  <Send size={13} style={{ marginRight: 1 }} />Send
+                  <Circle size={11} />
+                  Plan
+                </button>
+
+                {/* Thin separator */}
+                <div style={{ width: 1, height: 16, background: `${tm.border}`, margin: "0 6px", flexShrink: 0 }} />
+
+                {/* Camera placeholder */}
+                <button type="button" style={{ ...iconBtnStyle(), gap: 2 }} title="Camera / screenshot" tabIndex={-1}>
+                  <Camera size={14} />
+                  <ChevronDown size={11} />
+                </button>
+
+                {/* Play / submit */}
+                <button type="submit" disabled={!isFilled} style={playBtnStyle} title="Send (Enter)">
+                  <Play size={15} style={{ fill: "currentColor" }} />
                 </button>
               </div>
             </div>
