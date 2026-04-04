@@ -95,10 +95,9 @@ export default function IDEPage() {
 
   return (
     <div className="ide-shell">
-      {/* ── Application Rail (narrow left icon rail) ── */}
+      {/* ── Sidebar ── */}
       <AppRail
         onNavigateHome={() => setShowHome(true)}
-        onOpenHistory={() => setHistoryOpen(true)}
       />
 
       {/* ── Main workspace column (fills remaining width) ── */}
