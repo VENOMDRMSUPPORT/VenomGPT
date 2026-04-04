@@ -300,12 +300,17 @@ export default function HomePage() {
                 rows={4}
                 style={textareaStyle}
               />
+              <style>{`
+                .home-ctl-btn { background: transparent !important; }
+                .home-ctl-btn:hover { background: rgba(255,255,255,0.08) !important; color: rgba(255,255,255,0.88) !important; }
+                .home-play-btn:hover:not(:disabled) { filter: brightness(1.12); transform: scale(1.04); }
+              `}</style>
               <div style={controlBarStyle}>
                 {/* Left: add + attach */}
-                <button type="button" style={iconBtnStyle()} title="Add" tabIndex={-1}>
+                <button type="button" style={iconBtnStyle()} className="home-ctl-btn" title="Add" tabIndex={-1}>
                   <Plus size={14} />
                 </button>
-                <button type="button" style={iconBtnStyle()} title="Attach file" tabIndex={-1}>
+                <button type="button" style={iconBtnStyle()} className="home-ctl-btn" title="Attach file" tabIndex={-1}>
                   <Paperclip size={14} />
                 </button>
 
@@ -313,7 +318,7 @@ export default function HomePage() {
                 <div style={{ flex: 1 }} />
 
                 {/* Center: sparkle + Plan toggle */}
-                <button type="button" style={iconBtnStyle()} title="AI actions" tabIndex={-1}>
+                <button type="button" style={iconBtnStyle()} className="home-ctl-btn" title="AI actions" tabIndex={-1}>
                   <Sparkles size={14} />
                 </button>
 
@@ -331,13 +336,13 @@ export default function HomePage() {
                 <div style={{ width: 1, height: 16, background: `${tm.border}`, margin: "0 6px", flexShrink: 0 }} />
 
                 {/* Camera placeholder */}
-                <button type="button" style={{ ...iconBtnStyle(), gap: 2 }} title="Camera / screenshot" tabIndex={-1}>
+                <button type="button" style={{ ...iconBtnStyle(), gap: 2 }} className="home-ctl-btn" title="Camera / screenshot" tabIndex={-1}>
                   <Camera size={14} />
                   <ChevronDown size={11} />
                 </button>
 
                 {/* Play / submit */}
-                <button type="submit" disabled={!isFilled} style={playBtnStyle} title="Send (Enter)">
+                <button type="submit" disabled={!isFilled} style={playBtnStyle} className="home-play-btn" title="Send (Enter)">
                   <Play size={15} style={{ fill: "currentColor" }} />
                 </button>
               </div>
