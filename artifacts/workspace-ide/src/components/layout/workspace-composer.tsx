@@ -36,6 +36,7 @@ export function WorkspaceComposer() {
   const [submitError, setSubmitError]     = useState<string | null>(null);
   const [isFocused, setIsFocused]         = useState(false);
   const [planMode, setPlanMode]           = useState(false);
+  const [isOptimized, setIsOptimized]     = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingPromptRef = useRef<string>('');
 
@@ -45,6 +46,7 @@ export function WorkspaceComposer() {
         startActiveTask(data.taskId, pendingPromptRef.current);
         setPendingSubmitPrompt(null);
         setPrompt('');
+        setIsOptimized(false);
         setAttachedImages([]);
         setImageError(null);
         setSubmitError(null);
@@ -113,6 +115,17 @@ export function WorkspaceComposer() {
     }
   };
 
+  const handleOptimize = useCallback(() => {
+    const trimmed = prompt.trim();
+    if (!trimmed) return;
+    if (trimmed.startsWith('Task:')) return;
+    const withoutTrailingPeriod = trimmed.replace(/\.\s*$/, '');
+    const capitalized = withoutTrailingPeriod.charAt(0).toUpperCase() + withoutTrailingPeriod.slice(1);
+    const optimized = `Task: ${capitalized}.\n\nPlease implement this carefully, ensuring the solution is complete, well-structured, and handles edge cases. Follow existing code conventions and patterns in the project. Provide clear, working code without placeholders.`;
+    setPrompt(optimized);
+    setIsOptimized(true);
+  }, [prompt]);
+
   const handleCancel = useCallback(async () => {
     if (!activeTaskId) return;
     try {
@@ -163,6 +176,7 @@ export function WorkspaceComposer() {
 
   const handleSuggestedPrompt = (text: string) => {
     setPrompt(text);
+    setIsOptimized(false);
   };
 
   useEffect(() => {
@@ -209,7 +223,7 @@ export function WorkspaceComposer() {
           {/* Textarea */}
           <textarea
             value={prompt}
-            onChange={e => setPrompt(e.target.value)}
+            onChange={e => { setPrompt(e.target.value); setIsOptimized(false); }}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}
@@ -265,11 +279,17 @@ export function WorkspaceComposer() {
 
             <button
               type="button"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 transition-all"
-              title="AI actions"
-              tabIndex={-1}
+              onClick={handleOptimize}
+              disabled={!prompt.trim() || disabled}
+              className={`h-7 px-2 rounded-lg text-[11px] font-medium flex items-center gap-1 transition-all border ${
+                isOptimized
+                  ? 'text-primary bg-primary/15 border-primary/30'
+                  : 'text-muted-foreground/50 hover:text-foreground hover:bg-white/8 border-transparent'
+              } disabled:opacity-30`}
+              title="Optimize prompt"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3 h-3" />
+              Optimize
             </button>
 
             <div className="flex-1" />
