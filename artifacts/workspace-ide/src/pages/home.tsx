@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Send, Code2, Bot, Database, Globe, Zap, Sparkles } from "lucide-react";
+import { Send, Code2, Bot, Database, FolderOpen, Clock, GitBranch, ChevronRight } from "lucide-react";
 import { VenomLogo } from "@/components/ui/venom-logo";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -11,9 +11,12 @@ const SUGGESTIONS = [
   { icon: Code2, label: "Build a full-stack app", prompt: "Build a full-stack web app with auth, database, and a REST API" },
   { icon: Bot, label: "Create an AI agent", prompt: "Create an AI agent that can browse the web and summarize pages" },
   { icon: Database, label: "Design a data pipeline", prompt: "Design and implement a data pipeline that ingests, transforms, and stores records" },
-  { icon: Globe, label: "Launch a SaaS product", prompt: "Scaffold a SaaS product with subscriptions, user management, and a dashboard" },
-  { icon: Zap, label: "Automate a workflow", prompt: "Build an automation that watches a webhook and triggers actions based on events" },
-  { icon: Sparkles, label: "Refactor existing code", prompt: "Refactor my existing codebase to improve performance, readability, and test coverage" },
+];
+
+const RECENT_PROJECTS = [
+  { name: "venom-api", branch: "main", updated: "2 hours ago" },
+  { name: "dashboard-ui", branch: "feat/auth", updated: "Yesterday" },
+  { name: "ml-pipeline", branch: "main", updated: "3 days ago" },
 ];
 
 function HeroLogo({ tm, size = 100 }: { tm: VGTheme; size?: number }) {
@@ -50,11 +53,44 @@ function PromptCard({ icon: Icon, label, tm, delay, onClick }: { icon: React.Ele
   );
 }
 
+function RecentProjectRow({ name, branch, updated, tm, delay }: { name: string; branch: string; updated: string; tm: VGTheme; delay: number }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.25 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+        borderRadius: 9, background: hovered ? tm.accentBg : "transparent",
+        border: `1px solid ${hovered ? tm.accentBorder : "transparent"}`,
+        cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+      }}
+    >
+      <div style={{ width: 28, height: 28, borderRadius: 8, background: tm.accentBg, border: `1px solid ${tm.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <FolderOpen size={13} style={{ color: tm.accent }} />
+      </div>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: tm.textSecondary, fontFamily: "monospace" }}>{name}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tm.textDimmed }}>
+        <GitBranch size={10} />
+        <span>{branch}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tm.textDimmed }}>
+        <Clock size={10} />
+        <span>{updated}</span>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function HomePage() {
   const { tm } = useTheme();
   const [prompt, setPrompt] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [sendHovered, setSendHovered] = useState(false);
+  const [viewAllHovered, setViewAllHovered] = useState(false);
   const [, navigate] = useLocation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isFilled = !!prompt.trim();
@@ -89,12 +125,43 @@ export default function HomePage() {
           </form>
         </motion.div>
 
-        {/* Suggestions */}
+        {/* Suggested prompts — 3 only */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.34 }} style={{ width: "100%" }}>
           <p style={{ fontSize: 10.5, color: tm.sectionLabel, marginBottom: 14, letterSpacing: "0.12em", textTransform: "uppercase", textAlign: "center", fontWeight: 600 }}>Suggested prompts</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(208px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {SUGGESTIONS.map(({ icon, label, prompt: p }, i) => (
               <PromptCard key={label} icon={icon} label={label} tm={tm} delay={0.38 + i * 0.05} onClick={() => handleSuggestion(p)} />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Recent Projects */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.52 }} style={{ width: "100%" }}>
+          {/* Section header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <p style={{ fontSize: 10.5, color: tm.sectionLabel, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600, margin: 0 }}>Your recent projects</p>
+            <button
+              onClick={() => navigate("/projects")}
+              onMouseEnter={() => setViewAllHovered(true)}
+              onMouseLeave={() => setViewAllHovered(false)}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                background: "transparent", border: "none", cursor: "pointer",
+                fontSize: 12, fontWeight: 600,
+                color: viewAllHovered ? tm.accentText : tm.textDimmed,
+                transition: "color 0.15s",
+                padding: 0,
+              }}
+            >
+              View All
+              <ChevronRight size={13} style={{ transition: "transform 0.15s", transform: viewAllHovered ? "translateX(2px)" : "none" }} />
+            </button>
+          </div>
+
+          {/* Project rows */}
+          <div style={{ borderRadius: 12, background: tm.glassPanelBg, border: `1px solid ${tm.glassPanelBorder}`, backdropFilter: "blur(8px)", overflow: "hidden", padding: "4px 0" }}>
+            {RECENT_PROJECTS.map((p, i) => (
+              <RecentProjectRow key={p.name} {...p} tm={tm} delay={0.55 + i * 0.06} />
             ))}
           </div>
         </motion.div>
