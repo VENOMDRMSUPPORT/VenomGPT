@@ -9,6 +9,15 @@ import { compressImage } from '@/lib/imageUtils';
 const MAX_IMAGES = 5;
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
 
+const SUGGESTED_PROMPTS = [
+  'Fix a bug',
+  'Add a feature',
+  'Write tests',
+  'Refactor this',
+  'Explain code',
+  'Review changes',
+];
+
 export function WorkspaceComposer() {
   const queryClient = useQueryClient();
 
@@ -19,7 +28,6 @@ export function WorkspaceComposer() {
   const setPendingNewTaskPrompt = useIdeStore(s => s.setPendingNewTaskPrompt);
   const setPendingSubmitPrompt = useIdeStore(s => s.setPendingSubmitPrompt);
 
-  // isRunning is a derived value — true whenever there's an active task
   const isRunning = activeTaskId !== null;
 
   const [prompt, setPrompt]               = useState('');
@@ -153,7 +161,10 @@ export function WorkspaceComposer() {
     setImageError(null);
   };
 
-  // Auto-submit prompt forwarded from the board ("New task" flow)
+  const handleSuggestedPrompt = (text: string) => {
+    setPrompt(text);
+  };
+
   useEffect(() => {
     if (!pendingNewTaskPrompt || disabled) return;
     handleSubmit(pendingNewTaskPrompt, [], false);
@@ -168,16 +179,23 @@ export function WorkspaceComposer() {
       <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
 
       <form onSubmit={handleFormSubmit}>
+        {/* Glassmorphism card */}
         <div
-          className={`rounded-xl border transition-all duration-150 overflow-hidden bg-background ${
-            isFocused ? 'border-primary/50 ring-1 ring-primary/15' : 'border-panel-border/60 hover:border-panel-border'
+          className={`rounded-xl border transition-all duration-150 overflow-hidden ${
+            isFocused ? 'border-primary/40 ring-1 ring-primary/10' : 'border-white/10 hover:border-white/15'
           } ${disabled ? 'opacity-60' : ''}`}
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+          }}
         >
           {/* Image chips */}
           {attachedImages.length > 0 && (
             <div className="flex flex-wrap gap-1.5 px-2.5 pt-2 pb-1">
               {attachedImages.map((src, i) => (
-                <div key={i} className="flex items-center gap-1.5 bg-panel border border-panel-border/60 rounded-lg px-1.5 py-0.5 text-[11px] group">
+                <div key={i} className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-1.5 py-0.5 text-[11px] group">
                   <img src={src} alt="" className="w-3.5 h-3.5 rounded object-cover" />
                   <span className="text-muted-foreground font-mono max-w-[60px] truncate">img-{i + 1}</span>
                   <button type="button" onClick={() => removeImage(i)} className="text-muted-foreground/40 hover:text-foreground">
@@ -201,13 +219,36 @@ export function WorkspaceComposer() {
             disabled={disabled}
           />
 
+          {/* Suggested prompts — hidden when task is running */}
+          {!isRunning ? (
+            <>
+              <div className="h-px mx-3 bg-white/8" />
+              <div className="flex flex-wrap gap-1.5 px-3 py-2">
+                {SUGGESTED_PROMPTS.map((text) => (
+                  <button
+                    key={text}
+                    type="button"
+                    onClick={() => handleSuggestedPrompt(text)}
+                    disabled={disabled}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-muted-foreground/70 border border-white/8 bg-white/4 hover:bg-white/10 hover:text-foreground hover:border-white/15 transition-all duration-100 disabled:opacity-30"
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+              <div className="h-px mx-3 bg-white/8" />
+            </>
+          ) : (
+            <div className="h-px mx-3 bg-white/8" />
+          )}
+
           {/* Control bar */}
-          <div className="flex items-center gap-0.5 px-2 pb-1.5 pt-0.5 border-t border-panel-border/20">
+          <div className="flex items-center gap-0.5 px-2 pb-1.5 pt-0.5">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || attachedImages.length >= MAX_IMAGES}
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-panel-border/40 disabled:opacity-30 transition-all"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 disabled:opacity-30 transition-all"
               title="Attach image"
             >
               <ImageIcon className="w-3.5 h-3.5" />
@@ -215,7 +256,7 @@ export function WorkspaceComposer() {
 
             <button
               type="button"
-              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-panel-border/40 transition-all"
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 transition-all"
               title="Markdown supported"
               tabIndex={-1}
             >
@@ -231,7 +272,7 @@ export function WorkspaceComposer() {
               className={`h-7 px-2 rounded-lg text-[11px] font-medium flex items-center gap-1 transition-all border ${
                 planMode
                   ? 'text-primary bg-primary/15 border-primary/30'
-                  : 'text-muted-foreground/50 hover:text-foreground hover:bg-panel-border/40 border-transparent'
+                  : 'text-muted-foreground/50 hover:text-foreground hover:bg-white/8 border-transparent'
               } disabled:opacity-40`}
               title="Plan mode"
             >
@@ -239,7 +280,7 @@ export function WorkspaceComposer() {
               Plan
             </button>
 
-            <div className="w-px h-4 bg-panel-border/40 mx-1.5" />
+            <div className="w-px h-4 bg-white/10 mx-1.5" />
 
             {isRunning && (
               <button
