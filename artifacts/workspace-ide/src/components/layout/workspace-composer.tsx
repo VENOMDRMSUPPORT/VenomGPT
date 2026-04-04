@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Play, Square, ImageIcon, X, Sparkles, AlignLeft, AlertCircle } from 'lucide-react';
+import { Play, Square, X, Sparkles, AlertCircle, Plus, Paperclip, Circle, Camera, ChevronDown } from 'lucide-react';
 import { useStartAgentTask } from '@workspace/api-client-react';
 import { getListAgentTasksQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -214,7 +214,7 @@ export function WorkspaceComposer() {
             onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            placeholder={isRunning ? 'Agent is working…' : 'Make, test, iterate...'}
+            placeholder={isRunning ? 'Agent is working…' : 'Ask questions, plan your work...'}
             className="w-full min-h-[72px] max-h-[140px] bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none resize-none leading-relaxed"
             disabled={disabled}
           />
@@ -246,21 +246,30 @@ export function WorkspaceComposer() {
           <div className="flex items-center gap-0.5 px-2 pb-1.5 pt-0.5">
             <button
               type="button"
+              disabled={disabled}
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 disabled:opacity-30 transition-all"
+              title="Add"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || attachedImages.length >= MAX_IMAGES}
               className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 disabled:opacity-30 transition-all"
-              title="Attach image"
+              title="Attach file"
             >
-              <ImageIcon className="w-3.5 h-3.5" />
+              <Paperclip className="w-3.5 h-3.5" />
             </button>
 
             <button
               type="button"
               className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 transition-all"
-              title="Markdown supported"
+              title="AI actions"
               tabIndex={-1}
             >
-              <AlignLeft className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5" />
             </button>
 
             <div className="flex-1" />
@@ -276,7 +285,7 @@ export function WorkspaceComposer() {
               } disabled:opacity-40`}
               title="Plan mode"
             >
-              <Sparkles className="w-3 h-3" />
+              <Circle className="w-3 h-3" />
               Plan
             </button>
 
@@ -294,14 +303,26 @@ export function WorkspaceComposer() {
             )}
 
             {!isRunning && (
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/85 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Run task (Enter) · Shift+Enter for new line"
-              >
-                <Play className="w-4 h-4 fill-current" />
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="flex items-center gap-0.5 px-1.5 h-7 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/8 transition-all"
+                  title="Camera / screenshot"
+                  tabIndex={-1}
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/85 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  title="Run task (Enter) · Shift+Enter for new line"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                </button>
+              </>
             )}
           </div>
         </div>
