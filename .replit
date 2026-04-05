@@ -69,5 +69,9 @@ IDE_PORT = "5173"
 BASE_PATH = "/"
 
 [[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
 localPort = 5173
 externalPort = 80
