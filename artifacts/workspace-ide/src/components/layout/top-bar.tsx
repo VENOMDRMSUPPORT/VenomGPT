@@ -3,11 +3,13 @@ import { useLocation } from "wouter";
 import {
   useGetWorkspace,
   useListAgentTasks,
+  useHealthCheck,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetWorkspaceQueryKey,
   getListAgentTasksQueryKey,
+  getHealthCheckQueryKey,
 } from "@workspace/api-client-react";
 import {
   TerminalSquare,
@@ -469,6 +471,12 @@ export function TopBar({ onNavigateHome }: TopBarProps) {
 
   const activeTaskId = useIdeStore((s) => s.activeTaskId);
   const isConnected = useIdeStore((s) => s.isConnected);
+
+  // HTTP health check — confirms the API server is reachable at the HTTP level
+  // (WS isConnected confirms WebSocket layer; healthz confirms HTTP layer).
+  const { isError: isHealthzError } = useHealthCheck({
+    query: { queryKey: getHealthCheckQueryKey(), refetchInterval: 30_000, retry: false },
+  });
   const toggleSidebar = useIdeStore((s) => s.toggleSidebar);
   const sidebarOpen = useIdeStore((s) => s.sidebarOpen);
   const openFiles = useIdeStore((s) => s.openFiles);
@@ -602,18 +610,24 @@ export function TopBar({ onNavigateHome }: TopBarProps) {
             </div>
           )}
 
-          {/* Connection status */}
+          {/* Connection status — WS layer + HTTP /healthz layer */}
           <div
-            className={`flex items-center gap-1 text-xs ${isConnected ? "text-muted-foreground" : "text-red-400"}`}
-            title={isConnected ? "Backend connected" : "Backend disconnected"}
+            className={`flex items-center gap-1 text-xs ${isConnected && !isHealthzError ? "text-muted-foreground" : "text-red-400"}`}
+            title={
+              !isConnected
+                ? "WebSocket disconnected"
+                : isHealthzError
+                ? "API server unreachable (HTTP)"
+                : "Backend connected (WS + HTTP)"
+            }
           >
-            {isConnected ? (
+            {isConnected && !isHealthzError ? (
               <Wifi className="w-3.5 h-3.5" />
             ) : (
               <AlertTriangle className="w-3.5 h-3.5" />
             )}
             <span className="hidden md:inline">
-              {isConnected ? "Connected" : "Disconnected"}
+              {isConnected && !isHealthzError ? "Connected" : "Disconnected"}
             </span>
           </div>
 
