@@ -23,7 +23,7 @@ runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
-mode = "sequential"
+mode = "parallel"
 author = "agent"
 
 [[workflows.workflow.tasks]]
@@ -33,6 +33,10 @@ args = "pnpm install"
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Start services"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
 
 [[workflows.workflow]]
 name = "Start services"
@@ -63,13 +67,13 @@ outputType = "console"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cross-env PORT=5173 BASE_PATH=/ VITE_API_PORT=3001 pnpm --filter @workspace/workspace-ide run dev"
 waitForPort = 5173
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 # Note: Individual artifacts will start their own services
 # - api-server will start on port 3001
