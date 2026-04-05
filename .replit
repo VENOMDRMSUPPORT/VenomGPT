@@ -23,12 +23,21 @@ runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
-mode = "parallel"
+mode = "sequential"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "test -d node_modules || pnpm install"
+args = "pnpm install"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start services"
+
+[[workflows.workflow]]
+name = "Start services"
+mode = "parallel"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"

@@ -15,11 +15,7 @@ if (Number.isNaN(port) || port <= 0) {
 // Replit sets this to a sub-path for proxying.
 const basePath = process.env.BASE_PATH ?? "/";
 
-// In Replit, the infrastructure proxy routes /api traffic to the API server,
-// so no Vite proxy is needed there. Locally, Vite must proxy /api itself.
-const isReplit = process.env.REPL_ID !== undefined;
-
-// The port the API server listens on locally (default 3001).
+// The port the API server listens on (default 3001).
 const apiPort = process.env.VITE_API_PORT ?? "3001";
 
 export default defineConfig({
@@ -62,16 +58,13 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
-    // Only proxy locally. Replit's infrastructure proxy handles /api routing.
-    proxy: isReplit
-      ? undefined
-      : {
-          "/api": {
-            target: `http://localhost:${apiPort}`,
-            changeOrigin: true,
-            ws: true,
-          },
-        },
+    proxy: {
+      "/api": {
+        target: `http://localhost:${apiPort}`,
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
   preview: {
     port,
