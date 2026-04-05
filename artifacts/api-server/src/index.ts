@@ -88,3 +88,21 @@ initWebSocketServer(server);
 server.listen(port, () => {
   logger.info({ port }, "Server listening");
 });
+
+let shuttingDown = false;
+
+function shutdown() {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+  logger.info("Shutting down gracefully...");
+  server.close(() => {
+    logger.info("Server closed");
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 5000);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
