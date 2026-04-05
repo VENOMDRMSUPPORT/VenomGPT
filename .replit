@@ -13,12 +13,21 @@ runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
-mode = "parallel"
+mode = "sequential"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "pnpm install"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Servers"
+
+[[workflows.workflow]]
+name = "Start Servers"
+mode = "parallel"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
@@ -67,10 +76,6 @@ ZAI_BASE_URL = "https://api.z.ai/api/coding/paas/v4/"
 API_PORT = "3001"
 IDE_PORT = "5173"
 BASE_PATH = "/"
-
-[[ports]]
-localPort = 3001
-externalPort = 3001
 
 [[ports]]
 localPort = 5173
