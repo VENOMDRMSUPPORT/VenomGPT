@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Users, Rocket, Menu, X, PanelLeftClose, PanelLeftOpen, Bell, User } from "lucide-react";
+import { Sun, Moon, Lock, LayoutGrid, Home, BookTemplate, Plug, Menu, X, PanelLeftClose, PanelLeftOpen, Bell, User } from "lucide-react";
 import venomLogoV2 from "@/assets/Futuristic_serpent_and_metallic_V_1775343892845.png";
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
@@ -15,14 +15,11 @@ interface NavItem {
   deferred?: boolean;
 }
 
-const SUPERAGENTS_ITEM: NavItem = { id: "superagents", icon: Rocket, label: "Superagents", deferred: true };
-
 const LOWER_NAV: NavItem[] = [
   { id: "home", icon: Home, label: "Home", path: "/" },
   { id: "apps", icon: LayoutGrid, label: "Apps", path: "/apps" },
   { id: "templates", icon: BookTemplate, label: "Templates", path: "/templates" },
   { id: "integrations", icon: Plug, label: "Integrations", path: "/integrations" },
-  { id: "community", icon: Users, label: "Community", deferred: true },
 ];
 
 interface PageLayoutProps {
@@ -48,7 +45,8 @@ function SidebarHeader({ tm, collapsed }: { tm: VGTheme; collapsed: boolean }) {
         position: "relative",
         display: "flex",
         alignItems: "center",
-        padding: collapsed ? "10px 8px" : "10px 14px",
+        padding: collapsed ? "0 8px" : "0 14px",
+        height: 52,
         flexShrink: 0,
         justifyContent: collapsed ? "center" : "flex-start",
         gap: 11,
@@ -198,9 +196,9 @@ function AppsNavItem({ tm, onClick }: { tm: VGTheme; onClick: () => void }) {
         gap: 10,
         padding: "10px 14px",
         borderRadius: 8,
-        background: hov ? "rgba(138,43,226,0.36)" : "rgba(138,43,226,0.28)",
-        border: "1px solid rgba(138,43,226,0.45)",
-        color: "#d4b4fe",
+        background: hov ? tm.accentBgHover : tm.accentBg,
+        border: `1px solid ${tm.accentBorder}`,
+        color: tm.accentText,
         cursor: "pointer",
         fontSize: 13.5,
         fontWeight: 700,
@@ -210,34 +208,9 @@ function AppsNavItem({ tm, onClick }: { tm: VGTheme; onClick: () => void }) {
         justifyContent: "center",
       }}
     >
-      <LayoutGrid size={16} style={{ flexShrink: 0, color: "#c084fc" }} />
+      <LayoutGrid size={16} style={{ flexShrink: 0, color: tm.accentText }} />
       <span className="pg-sidebar-text" style={{ flex: 1 }}>Apps</span>
     </button>
-  );
-}
-
-function DeferredNavItem({ icon: Icon, label, tm }: { icon: React.ElementType; label: string; tm: VGTheme }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "10px 14px",
-        borderRadius: 8,
-        color: tm.textDimmed,
-        cursor: "not-allowed",
-        fontSize: 13.5,
-        fontWeight: 500,
-        userSelect: "none",
-        opacity: 0.55,
-        justifyContent: "center",
-      }}
-      title={`${label} — coming soon`}
-    >
-      <Icon size={16} style={{ flexShrink: 0 }} />
-      <span className="pg-sidebar-text" style={{ flex: 1 }}>{label}</span>
-    </div>
   );
 }
 
@@ -290,8 +263,8 @@ function LowerNavItem({ icon: Icon, label, path, locked, deferred, isActive, tm,
         gap: 10,
         padding: "10px 14px",
         borderRadius: 8,
-        background: isActive ? "rgba(138,43,226,0.15)" : hov ? "rgba(255,255,255,0.05)" : "transparent",
-        border: `1px solid ${isActive ? "rgba(138,43,226,0.3)" : "transparent"}`,
+        background: isActive ? tm.accentBg : hov ? tm.navHover : "transparent",
+        border: `1px solid ${isActive ? tm.accentBorder : "transparent"}`,
         color: isActive ? tm.textSecondary : hov ? tm.textSecondary : tm.textMuted,
         cursor: "pointer",
         fontSize: 13,
@@ -315,12 +288,11 @@ function SidebarNav({ tm, active, onNav }: { tm: VGTheme; active: string; onNav:
   return (
     <nav style={{ flex: 1, padding: "4px 8px", display: "flex", flexDirection: "column", gap: 1, overflowY: "auto" }}>
       <AppsNavItem tm={tm} onClick={() => go("/ide")} />
-      <DeferredNavItem icon={SUPERAGENTS_ITEM.icon} label={SUPERAGENTS_ITEM.label} tm={tm} />
 
       <div style={{
         margin: "8px 4px",
         height: 1,
-        background: "rgba(255,255,255,0.07)",
+        background: tm.sidebarDivider,
         borderRadius: 1,
       }} />
 
