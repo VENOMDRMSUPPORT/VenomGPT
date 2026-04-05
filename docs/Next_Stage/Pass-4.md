@@ -1,42 +1,92 @@
 # Pass 4: Premium Orchestration UI Surface
 
-  ## What & Why
-  The backend has four complete orchestration phases: parallel dispatch, checkpoint-aware continuation chains, operator approval gates, and verification-orchestrated execution. None of this is cleanly surfaced in the UI beyond raw log events. This is the highest-leverage pass in the roadmap — it transforms VenomGPT from an agent with a transcript into a genuine orchestration workspace. This is the P1 direction from the post-orchestration roadmap.
+## What & Why
+The backend has four complete orchestration phases: parallel dispatch,
+checkpoint-aware continuation chains, operator approval gates, and
+verification-orchestrated execution. None of this is surfaced in the UI beyond
+raw log events. This is the highest-leverage pass in the roadmap — it transforms
+VenomGPT from "an agent with a transcript" into a genuine orchestration workspace.
+This is the P1 direction from the post-orchestration roadmap.
 
-  ## Done looks like
-  - The Evidence Panel has a dedicated "Orchestration" section showing lane-level dispatch data: how many lanes ran in parallel, which succeeded/failed, and the dispatch mode (parallel vs serial_fallback)
-  - A continuation lineage view shows the ancestry chain for resumed tasks: origin task → checkpoint → resumed run, with depth indicator
-  - When a task enters `awaiting_approval` phase, the task console shows an Approval Gate card with Approve / Deny / Approve Selective actions wired to the backend endpoints
-  - When a task is in `selectively_blocked` state, the UI shows which lanes are blocked and which are proceeding
-  - The provider diagnostics view (accessible from settings or a dev panel) is wired to `GET /provider-diagnostics` and shows active provider, model, lane config, and any startup warnings
-  - The runtime status panel is fully wired to `GET /runtime/status` and shows server port, running processes, and stale detection state
+**Product identity note**: this is the pass that defines what VenomGPT *is*.
+The approval gate UI and continuation lineage view especially. Prioritise tasks
+1 and 2 first — they are the highest product-defining items. Tasks 3–6 follow.
 
-  ## Out of scope
-  - Visual graph rendering (node-graph / D3 layouts) — text-based structured views are sufficient for this pass
-  - Multi-workspace parallel views
-  - Editing or reconfiguring lanes from the UI
+**Scope constraint**: text-based structured views only. No node-graph or D3
+rendering. No backend changes.
 
-  ## Tasks
-  1. **Orchestration section in Evidence Panel** — Add a new "Orchestration" section to `evidence-panel.tsx` that renders lane dispatch data from `TaskEvidence`. Show dispatch mode, lane count, per-lane status, and any failure isolation events.
+---
 
-  2. **Continuation lineage view** — In the Evidence Panel or a dedicated tab, render the continuation ancestry chain. Pull `ancestryDepth` and origin checkpoint ID from the evidence replay endpoint and display as a linear chain with depth badges.
+## Execution order within this pass
 
-  3. **Approval gate UI card** — When `livePhase.phase === "awaiting_approval"`, render an ApprovalGateCard in the TaskConsole. Wire three actions: Approve all (`POST /approve`), Deny (`POST /deny`), and Approve selective (`POST /approve-selective` with lane selection UI).
+Execute in this order to maximise visible product value early:
 
-  4. **Selectively blocked lane indicator** — When phase is `selectively_blocked`, show which lanes are blocked vs proceeding. Pull lane state from the live phase broadcast and render a compact lane status grid.
+| Step | Task | Why first |
+|------|------|-----------|
+| A | Orchestration section in Evidence Panel | Grounds the lane model visually |
+| B | Continuation lineage view | Defines task ancestry — core product identity |
+| C | Approval gate UI card | Exposes operator control surface |
+| D | Selectively blocked lane indicator | Companion to approval gate |
+| E | Provider diagnostics panel | Operational utility |
+| F | Runtime status wiring | Confirm or fix (may already be wired from Pass 1) |
 
-  5. **Provider diagnostics panel** — Wire `GET /provider-diagnostics` to a provider info panel accessible from the settings page or a command palette shortcut. Display active provider name, model, lane count, and diagnostic messages.
+---
 
-  6. **Runtime status wiring** — Confirm `GET /runtime/status` is polled or subscribed to and the runtime status bar reflects current server state including port, process list, and stale-after-apply detection.
+## Done looks like
+- The Evidence Panel has a dedicated "Orchestration" section showing lane-level
+  dispatch data: dispatch mode (parallel vs serial_fallback), lane count,
+  per-lane status (success / failed / cancelled), and any failure isolation events
+- A continuation lineage view renders the ancestry chain for resumed tasks:
+  origin task → checkpoint → resumed run, with depth badge and origin checkpoint ID
+- When a task enters `awaiting_approval` phase, the task console shows an
+  ApprovalGateCard with three wired actions: Approve all, Deny, and Approve selective
+  (with lane selection for selective approval)
+- When a task is in `selectively_blocked` state, a compact lane status grid shows
+  which lanes are blocked vs proceeding
+- A provider diagnostics panel (accessible from settings or a keyboard shortcut)
+  shows active provider, model, lane config, and startup warnings — wired to
+  `GET /provider-diagnostics`
+- The runtime status bar reflects live data from `GET /runtime/status` including
+  port, process list, and stale-after-apply state (note: this may already be done in
+  Pass 1; confirm before re-implementing)
 
-  ## Relevant files
-  - `artifacts/workspace-ide/src/components/panels/evidence-panel.tsx`
-  - `artifacts/workspace-ide/src/components/panels/task-console.tsx`
-  - `artifacts/workspace-ide/src/components/panels/recovery-card.tsx`
-  - `artifacts/workspace-ide/src/store/use-ide-store.ts`
-  - `artifacts/workspace-ide/src/lib/evidenceTypes.ts`
-  - `artifacts/api-server/src/routes/providerDiagnostics.ts`
-  - `artifacts/api-server/src/routes/runtime.ts`
-  - `artifacts/api-server/src/routes/agent.ts`
-  - `lib/api-client-react`
-  
+## Out of scope
+- Visual graph rendering (node-graph / D3 / canvas layouts)
+- Multi-workspace parallel views
+- Editing or reconfiguring lanes from the UI
+- Any backend changes
+
+## Tasks
+1. **Orchestration section in Evidence Panel** — Add an "Orchestration" section to
+   `evidence-panel.tsx`. Render lane dispatch data from `TaskEvidence`: dispatch mode,
+   lane count, per-lane status, failure isolation events.
+
+2. **Continuation lineage view** — In the Evidence Panel (new tab or new section),
+   render the continuation ancestry chain as a linear list with depth badges. Pull
+   `ancestryDepth` and origin checkpoint ID from the evidence replay endpoint.
+
+3. **Approval gate UI card** — When `livePhase.phase === "awaiting_approval"`, render
+   an `ApprovalGateCard` in the TaskConsole. Wire Approve all (`POST /approve`), Deny
+   (`POST /deny`), and Approve selective (`POST /approve-selective`) with a lane
+   selection list for selective approval.
+
+4. **Selectively blocked lane indicator** — When phase is `selectively_blocked`, show
+   a compact lane status grid. Pull lane state from the `live_phase` WebSocket event.
+
+5. **Provider diagnostics panel** — Wire `GET /provider-diagnostics` to a panel
+   accessible from settings or a command shortcut. Show provider name, model,
+   lane count, and any startup diagnostic messages.
+
+6. **Runtime status wiring** — If not completed in Pass 1, confirm or fix the
+   runtime status bar to reflect live data from `GET /runtime/status`.
+
+## Relevant files
+- `artifacts/workspace-ide/src/components/panels/evidence-panel.tsx`
+- `artifacts/workspace-ide/src/components/panels/task-console.tsx`
+- `artifacts/workspace-ide/src/components/panels/recovery-card.tsx`
+- `artifacts/workspace-ide/src/store/use-ide-store.ts`
+- `artifacts/workspace-ide/src/lib/evidenceTypes.ts`
+- `artifacts/api-server/src/routes/providerDiagnostics.ts`
+- `artifacts/api-server/src/routes/runtime.ts`
+- `artifacts/api-server/src/routes/agent.ts`
+- `lib/api-client-react`

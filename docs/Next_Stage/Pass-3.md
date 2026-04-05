@@ -1,34 +1,60 @@
 # Pass 3: Advanced Action Filtering & Search
 
-  ## What & Why
-  The backend captures rich per-action telemetry: action type, file path, command text, duration, success/failure, and phase grouping. The frontend already has `actionSelectors.ts` with `filterActionGroups` infrastructure. However, no filter or search UI exists in the transcript. Users cannot find a specific file operation, command, or phase in a long task run. This pass closes that UX gap with a light, no-backend-change filter layer.
+## What & Why
+The backend captures rich per-action telemetry: type, file path, command text,
+duration, success/failure, and phase grouping. The frontend already has
+`actionSelectors.ts` with `filterActionGroups` infrastructure in place. However,
+no filter or search UI exists in the transcript today. Users cannot locate a specific
+file operation, command, or phase in a long run.
 
-  ## Done looks like
-  - A filter bar appears above the action transcript with chips for action types: Read, Write, Shell, Plan, Verify
-  - Selecting a chip filters the transcript to show only matching action groups; multiple chips can be selected (OR logic)
-  - A search input allows free-text search across file paths and command text
-  - A "Collapse all / Expand all" toggle controls the expanded state of all action groups at once
-  - Filters and search are local state (no backend calls required); they update the view in real time as the user types
-  - Filters persist while the task is being viewed but reset when the user switches to a different task
+**Priority note**: this pass is self-contained and requires zero backend changes.
+It is sequenced at Pass 3 because it is low-risk and fast. However, if resources
+are constrained, it may be deferred until after the first half of Pass 4
+(Orchestration section + Continuation lineage) without blocking anything.
+It does not block Pass 4 or Pass 5.
 
-  ## Out of scope
-  - Server-side filtering or search (all data is already in the frontend)
-  - Saving or exporting filtered results
-  - Date/time range filtering
+**Scope constraint**: all filtering is client-side. No new backend calls are added.
 
-  ## Tasks
-  1. **Filter chip bar component** — Build a compact chip bar with one chip per `ActionType`. Chips toggle on/off; active chips highlight. Place it at the top of the action transcript section inside TaskConsole.
+---
 
-  2. **Text search input** — Add a search input next to the chip bar. Wire it to filter `ActionGroup` entries whose `filePath` or `command` field matches the search string (case-insensitive substring).
+## Done looks like
+- A filter bar appears above the action transcript with chips for: Read, Write, Shell,
+  Plan, Verify — each maps to one `ActionType` from `actionSelectors.ts`
+- Selecting chips filters the transcript to matching action groups (OR logic);
+  multiple chips can be active simultaneously
+- A search input filters action groups whose `filePath` or `command` matches the
+  typed string (case-insensitive substring, real-time)
+- A "Collapse all / Expand all" toggle sets all action group expanded states at once
+- Filter state is local to the component; resets when the user switches to a different task
+- Phase section headers (PLANNING / EXECUTING / VERIFYING / REPAIRING) appear between
+  action windows so users know where each group occurred in the run
 
-  3. **Connect filters to filterActionGroups** — Pass the active chip set and search string into the existing `filterActionGroups` selector in `actionSelectors.ts`. Extend the selector if needed to support text search on path/command.
+## Out of scope
+- Server-side filtering or search
+- Saving or exporting filtered results
+- Date/time range filtering
+- Reordering action groups
 
-  4. **Collapse all / Expand all control** — Add a toggle button that sets all action group `expanded` flags to true or false simultaneously. Store this state in component-local state.
+## Tasks
+1. **Filter chip bar** — Build a compact chip bar with one chip per `ActionType`.
+   Active chips highlight; clicking toggles on/off. Place it at the top of the action
+   transcript section inside `TaskConsole`.
 
-  5. **Phase section headers** — Ensure the transcript renders clear phase-group headers (PLANNING / EXECUTING / VERIFYING etc.) between action windows so users know where in the run each group of actions occurred.
+2. **Text search input** — Add a search input next to the chip bar. Wire it to filter
+   `ActionGroup` entries whose `filePath` or `command` field matches the typed string.
 
-  ## Relevant files
-  - `artifacts/workspace-ide/src/components/panels/task-console.tsx`
-  - `artifacts/workspace-ide/src/lib/actionSelectors.ts`
-  - `artifacts/workspace-ide/src/store/use-ide-store.ts`
-  
+3. **Connect to filterActionGroups** — Pass the active chip set and search string into
+   `filterActionGroups` in `actionSelectors.ts`. Extend the selector if needed to
+   support text search on path/command fields.
+
+4. **Collapse all / Expand all** — Add a single toggle button that sets all action
+   group `expanded` flags simultaneously. Store in component-local state.
+
+5. **Phase section headers** — Ensure the transcript renders clear phase-group headers
+   between action windows. Use the existing `phase` metadata already present in
+   `ActionGroup` records.
+
+## Relevant files
+- `artifacts/workspace-ide/src/components/panels/task-console.tsx`
+- `artifacts/workspace-ide/src/lib/actionSelectors.ts`
+- `artifacts/workspace-ide/src/store/use-ide-store.ts`
