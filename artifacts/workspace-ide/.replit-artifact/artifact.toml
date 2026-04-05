@@ -1,0 +1,34 @@
+kind = "web"
+previewPath = "/"
+title = "AI Coding Workspace"
+version = "1.0.0"
+id = "artifacts/workspace-ide"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 5173
+
+[services.development]
+run = "pnpm --filter @workspace/workspace-ide run dev"
+
+[services.development.env]
+VITE_API_PORT = "3001"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/workspace-ide", "run", "build" ]
+publicDir = "artifacts/workspace-ide/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "5173"
+BASE_PATH = "/"
