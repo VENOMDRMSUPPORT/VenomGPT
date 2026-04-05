@@ -61,6 +61,11 @@ Do not advance to the next sub-group until the current one is confirmed done.
 2. **Bulk-delete** — Add checkbox selection to history drawer items. "Delete selected"
    action calls the history delete endpoint for each selected task after a confirmation
    dialog. Show per-item error if any deletion fails.
+   **Verification required before coding**: read `artifacts/api-server/src/routes/settings.ts`
+   to confirm whether history deletion is per-task (DELETE with task id), batch
+   (DELETE with id list in body), or a full-history wipe only. Implement exactly what
+   the endpoint supports — do not add a per-task loop if only batch is available, and
+   do not assume batch if only individual deletion exists.
 
 **Relevant files**:
 - `artifacts/workspace-ide/src/components/panels/task-list-panel.tsx`

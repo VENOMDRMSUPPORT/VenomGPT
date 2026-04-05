@@ -57,6 +57,23 @@ This is the foundational pass — nothing else can close cleanly without it.
 **Exit condition for this checklist**: every row has a confirmed frontend consumer or is
 explicitly marked "deferred to Pass N" with a reason.
 
+### Proof format (required output from the executor)
+
+The executor must deliver the completed checklist in this exact format. No row may be
+left with a blank Status or Evidence column.
+
+| # | Route | Consumer | Status | Evidence |
+|---|-------|----------|--------|----------|
+| 1 | `GET /healthz` | connection status bar | ✅ wired / ⚠️ gap / 🔁 deferred→PassN | hook name or file:line where call is made |
+| … | … | … | … | … |
+
+**Status values**:
+- `✅ wired` — call confirmed in code, URL matches backend route
+- `⚠️ gap` — consumer exists but URL is stale, renamed, or missing
+- `🔁 deferred→PassN` — explicitly deferred with reason noted in Evidence column
+
+This table is the pass completion artifact. It must be attached to the pass sign-off.
+
 ---
 
 ## Done looks like

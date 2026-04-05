@@ -66,9 +66,12 @@ Execute in this order to maximise visible product value early:
    `ancestryDepth` and origin checkpoint ID from the evidence replay endpoint.
 
 3. **Approval gate UI card** — When `livePhase.phase === "awaiting_approval"`, render
-   an `ApprovalGateCard` in the TaskConsole. Wire Approve all (`POST /approve`), Deny
-   (`POST /deny`), and Approve selective (`POST /approve-selective`) with a lane
-   selection list for selective approval.
+   an `ApprovalGateCard` in the TaskConsole. Wire three approval actions.
+   **Verification required before coding**: read `lib/api-spec/openapi.yaml` and
+   `lib/api-client-react` to confirm the exact endpoint paths and request body shapes
+   for approve / deny / approve-selective. The paths written in this document
+   (`/approve`, `/deny`, `/approve-selective`) are indicative — do not assume them.
+   Use the spec as the source of truth. If the paths differ, follow the spec.
 
 4. **Selectively blocked lane indicator** — When phase is `selectively_blocked`, show
    a compact lane status grid. Pull lane state from the `live_phase` WebSocket event.
