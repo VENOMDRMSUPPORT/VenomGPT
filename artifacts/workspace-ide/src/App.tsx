@@ -8,6 +8,8 @@ import SettingsPage from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
 import AppsPage from "./pages/apps";
 import TemplatesPage from "./pages/templates";
+import LoginPage from "./pages/login";
+import ProtectedRoute from "./components/auth/protected-route";
 import { ThemeProvider } from "@/lib/theme-context";
 
 const queryClient = new QueryClient({
@@ -26,7 +28,10 @@ function App() {
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomePage} />
-            <Route path="/apps" component={AppsPage} />
+            <Route path="/login" component={LoginPage} />
+            <Route path="/apps">
+              {() => <ProtectedRoute component={AppsPage} />}
+            </Route>
             <Route path="/templates" component={TemplatesPage} />
             <Route path="/settings" component={SettingsPage} />
             <Route path="/integrations" component={IntegrationsPage} />
