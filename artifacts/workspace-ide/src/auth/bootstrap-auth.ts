@@ -2,7 +2,7 @@
  * bootstrap-auth.ts
  *
  * TEMPORARY BOOTSTRAP — This module provides a minimal, client-side-only
- * authentication shim for gating the APPS page. It uses fixed credentials
+ * authentication shim for gating the workspace UI. It uses fixed credentials
  * and localStorage to persist the session.
  *
  * Replace this entire module with real auth (JWT, OAuth, server-side sessions,

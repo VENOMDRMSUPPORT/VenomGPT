@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     setLoading(false);
     if (ok) {
-      navigate("/apps");
+      navigate("/");
     } else {
       setError("Invalid username or password.");
     }

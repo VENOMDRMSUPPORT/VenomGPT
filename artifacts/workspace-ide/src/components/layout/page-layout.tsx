@@ -183,37 +183,6 @@ function SidebarToggleBtn({ tm, collapsed, onToggle }: { tm: VGTheme; collapsed:
   );
 }
 
-function AppsNavItem({ tm, onClick }: { tm: VGTheme; onClick: () => void }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "10px 14px",
-        borderRadius: 8,
-        background: hov ? tm.accentBgHover : tm.accentBg,
-        border: `1px solid ${tm.accentBorder}`,
-        color: tm.accentText,
-        cursor: "pointer",
-        fontSize: 13.5,
-        fontWeight: 700,
-        textAlign: "left",
-        width: "100%",
-        transition: "background 0.15s",
-        justifyContent: "center",
-      }}
-    >
-      <LayoutGrid size={16} style={{ flexShrink: 0, color: tm.accentText }} />
-      <span className="pg-sidebar-text" style={{ flex: 1 }}>Apps</span>
-    </button>
-  );
-}
-
 function LowerNavItem({ icon: Icon, label, path, locked, deferred, isActive, tm, onClick }: {
   icon: React.ElementType;
   label: string;
@@ -287,15 +256,6 @@ function SidebarNav({ tm, active, onNav }: { tm: VGTheme; active: string; onNav:
 
   return (
     <nav style={{ flex: 1, padding: "4px 8px", display: "flex", flexDirection: "column", gap: 1, overflowY: "auto" }}>
-      <AppsNavItem tm={tm} onClick={() => go("/ide")} />
-
-      <div style={{
-        margin: "8px 4px",
-        height: 1,
-        background: tm.sidebarDivider,
-        borderRadius: 1,
-      }} />
-
       {LOWER_NAV.map((item) => (
         <LowerNavItem
           key={item.id}
@@ -438,7 +398,7 @@ export default function PageLayout({ activePage, header, headerRight, centered, 
         data-collapsed={collapsed ? "true" : "false"}
       >
         <SidebarHeader tm={tm} collapsed={collapsed} />
-        <SidebarNav tm={tm} active={activePage} onNav={() => {}} />
+        <SidebarNav tm={tm} active={activePage} onNav={() => { }} />
         <SidebarFooter />
       </aside>
 

@@ -27,15 +27,25 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Switch>
-            <Route path="/" component={HomePage} />
             <Route path="/login" component={LoginPage} />
             <Route path="/apps">
               {() => <ProtectedRoute component={AppsPage} />}
             </Route>
-            <Route path="/templates" component={TemplatesPage} />
-            <Route path="/settings" component={SettingsPage} />
-            <Route path="/integrations" component={IntegrationsPage} />
-            <Route component={Workspace} />
+            <Route path="/templates">
+              {() => <ProtectedRoute component={TemplatesPage} />}
+            </Route>
+            <Route path="/settings">
+              {() => <ProtectedRoute component={SettingsPage} />}
+            </Route>
+            <Route path="/integrations">
+              {() => <ProtectedRoute component={IntegrationsPage} />}
+            </Route>
+            <Route path="/">
+              {() => <ProtectedRoute component={HomePage} />}
+            </Route>
+            <Route>
+              {() => <ProtectedRoute component={Workspace} />}
+            </Route>
           </Switch>
           <Toaster />
         </TooltipProvider>

@@ -2,7 +2,7 @@
  * ProtectedRoute
  *
  * TEMPORARY BOOTSTRAP — Wraps a route component and redirects unauthenticated
- * users to /login. Replace with a real auth guard when proper authentication
+ * users to /login. Replace with a real auth guard when backend authentication
  * is implemented.
  */
 
