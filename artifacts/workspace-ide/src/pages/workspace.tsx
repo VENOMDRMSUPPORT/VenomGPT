@@ -23,7 +23,6 @@ import {
   Camera,
   ToggleLeft,
   PanelRight,
-  ExternalLink,
   Users,
   History,
   Globe,
@@ -587,7 +586,6 @@ export default function Workspace() {
   const [fileSearch, setFileSearch] = useState("");
   const [showFiles, setShowFiles] = useState(true);
   const [showLibraryView, setShowLibraryView] = useState(false);
-  const [showTaskBoard, setShowTaskBoard] = useState(false);
   const [filesPanelWidth, setFilesPanelWidth] = useState(240);
   const dragging = useRef(false);
   const filesDragging = useRef(false);
@@ -807,18 +805,12 @@ export default function Workspace() {
                   <button className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0 transition-opacity opacity-70 hover:opacity-100" style={{ color: tm.textMuted, border: `1px solid ${tm.border}`, background: tm.bgPanel }} onClick={() => setSidebarWidth(MIN_W)} title="Collapse sidebar">
                     <PanelLeft className="w-3.5 h-3.5" />
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-xs font-medium" style={{ background: tm.accentBg, color: tm.accentText, border: `1px solid ${tm.accentBorder}` }} onClick={() => setShowTaskBoard(true)}>
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" /> Open task board
-                  </button>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-1 py-2">
                 <button className="w-8 h-8 flex items-center justify-center rounded" style={{ color: tm.textMuted }} title="Settings">
                   <Settings className="w-4 h-4" />
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg" style={{ background: tm.accentBg, color: tm.accentText }} title="Open task board" onClick={() => setShowTaskBoard(true)}>
-                  <ExternalLink className="w-4 h-4" />
                 </button>
                 <button className="w-8 h-8 flex items-center justify-center rounded-lg transition-opacity opacity-60 hover:opacity-100" style={{ color: tm.textMuted, border: `1px solid ${tm.border}`, background: tm.bgPanel }} title="Expand sidebar" onClick={() => setSidebarWidth(MAX_W)}>
                   <PanelRight className="w-4 h-4" />
@@ -833,9 +825,6 @@ export default function Workspace() {
         </div>
       </div>
 
-      {showTaskBoard ? (
-        <TaskBoard tm={tm} isDark={isDark} onClose={() => setShowTaskBoard(false)} />
-      ) : (
       <div className="flex-1 flex min-h-0 min-w-0">
 
         <div className="flex flex-col shrink-0 border-r relative overflow-hidden" style={{ width: consoleWidth, minWidth: CONSOLE_MIN_W, maxWidth: CONSOLE_MAX_W, background: tm.bgSurface, borderColor: tm.border }}>
@@ -1206,7 +1195,6 @@ export default function Workspace() {
           </div>
         </div>
       </div>
-      )}
       </div>
       <div className="shrink-0 flex items-center px-3 border-t select-none" style={{ height: 22, background: tm.bgBase, borderColor: tm.border }}>
         <div className="flex items-center gap-1.5">
