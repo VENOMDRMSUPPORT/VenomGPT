@@ -18,7 +18,7 @@ const orbVariants = {
       duration: custom.duration,
       repeat: Infinity,
       repeatType: "mirror" as const,
-      ease: "easeInOut",
+      ease: "easeInOut" as const,
     },
   }),
 };
