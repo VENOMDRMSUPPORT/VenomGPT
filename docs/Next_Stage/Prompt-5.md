@@ -31,6 +31,9 @@ Do not begin Sub-group C until Sub-group B is confirmed done.
 - Do not add multi-workspace views.
 - Do not invent new endpoint behaviour — verify what the backend actually supports
   before implementing (each sub-group has a verification step).
+- **One sub-group at a time**: do not begin Sub-group B before Sub-group A evidence is delivered and confirmed. Do not begin Sub-group C before Sub-group B evidence is delivered and confirmed.
+- **Stop condition**: if any endpoint, hook, spec path, or store field cannot be verified from code or spec, stop that step and report the blocker. Do not guess or invent.
+- **Evidence rule**: any claimed completion without the required evidence is considered incomplete. A sub-group is not closed until all its evidence items are present.
 
 ---
 
@@ -170,4 +173,9 @@ Deliver three separate sub-group reports in sequence.
 2. Prompt suggestions: [file:line + show condition]
 3. Provider diagnostics fields: [list]
 4. TypeScript: workspace-ide 0 errors ✅
+
+### Pass status
+[ ] PASS CLOSED — all 3 sub-groups complete, all evidence present, TypeScript clean
+[ ] PARTIALLY CLOSED — N sub-groups incomplete or evidence missing, reason stated per sub-group
+[ ] BLOCKED — implementation cannot proceed, blocker described below:
 ```

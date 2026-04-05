@@ -24,6 +24,8 @@ You are not building new features. You are confirming or repairing existing wiri
 - Do not modify any file under `artifacts/api-server/src/`.
 - Do not install new packages unless a wiring gap cannot be closed without one (justify in evidence).
 - Do not leave any checklist row blank.
+- **Stop condition**: if any endpoint, hook, or file path cannot be verified from code or spec, stop implementation for that item and report it as a blocker in the evidence. Do not guess or invent.
+- **Evidence rule**: any claimed completion without the required evidence is considered incomplete. Do not report a step as done without its corresponding evidence item.
 
 ---
 
@@ -142,4 +144,9 @@ Respond with these sections in order. Do not skip any section.
 ### 6. TypeScript
 workspace-ide: 0 errors ✅
 api-server: 0 errors ✅
+
+### Pass status
+[ ] PASS CLOSED — all 39 rows filled, all steps evidenced, TypeScript clean
+[ ] PARTIALLY CLOSED — N rows blocked or deferred, reason stated
+[ ] BLOCKED — implementation cannot proceed, blocker described below:
 ```

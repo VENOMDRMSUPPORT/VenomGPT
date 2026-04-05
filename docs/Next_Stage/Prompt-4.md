@@ -28,7 +28,10 @@ Complete and confirm each step before moving to the next.
 - Do not modify any file under `artifacts/api-server/src/`.
 - Do not add node-graph, D3, or canvas-based rendering.
 - Do not edit or reconfigure lane settings from the UI.
-- Do not assume endpoint paths — read the spec first (Step 3 has explicit instructions).
+- Do not assume endpoint paths — read the spec first (Step C has explicit instructions).
+- **One sub-step at a time**: do not implement Step B before Step A evidence is complete. Do not implement Step C before Step B evidence is complete. Follow the A→F sequence strictly.
+- **Stop condition**: if any spec path, store field, or `evidenceTypes.ts` field cannot be verified from code or spec, stop that sub-step and report the blocker. Do not guess or invent.
+- **Evidence rule**: any claimed completion without the required evidence is considered incomplete. Do not advance to the next step without the current step's evidence documented.
 
 ---
 
@@ -148,4 +151,9 @@ Approve selective: VERB /path — body: { ... }
 
 ### TypeScript
 workspace-ide: 0 errors ✅
+
+### Pass status
+[ ] PASS CLOSED — all steps A–F complete, all evidence present, TypeScript clean
+[ ] PARTIALLY CLOSED — N steps incomplete or evidence missing, reason stated per step
+[ ] BLOCKED — implementation cannot proceed, blocker described below:
 ```

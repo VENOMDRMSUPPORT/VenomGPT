@@ -28,6 +28,8 @@ the Zustand store.
 - Do not modify any file under `artifacts/api-server/src/`.
 - Do not add drag-to-reorder or date-range filtering.
 - Do not persist filter state across task switches — it must reset on task change.
+- **Stop condition**: if any `ActionType` value, store field, or selector function cannot be verified from code, stop that sub-step and report the blocker. Do not guess or invent.
+- **Evidence rule**: any claimed completion without the required evidence is considered incomplete.
 
 ---
 
@@ -104,4 +106,9 @@ If headers are missing or inconsistent, add them.
 
 ### 6. TypeScript
 workspace-ide: 0 errors ✅
+
+### Pass status
+[ ] PASS CLOSED — all 5 steps complete, all evidence present, TypeScript clean
+[ ] PARTIALLY CLOSED — N steps incomplete or evidence missing, reason stated
+[ ] BLOCKED — implementation cannot proceed, blocker described below:
 ```

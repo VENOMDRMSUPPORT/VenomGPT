@@ -25,6 +25,8 @@ Make the editor a first-class participant in the staged workflow.
 - Do not add a terminal panel or collaborative editing.
 - Do not create a file-creation UI in the editor.
 - Do not invent new state management patterns — use the existing Zustand store (`use-ide-store.ts`).
+- **Stop condition**: if any checkpoint endpoint, store shape, or Monaco API cannot be verified from code or spec, stop that sub-step and report the blocker. Do not guess or invent.
+- **Evidence rule**: any claimed completion without the required evidence is considered incomplete. A working UI without documented evidence is not a closed step.
 
 ---
 
@@ -129,4 +131,9 @@ NOT call `markFileClean`. Verify the file remains marked dirty. Fix if missing.
 
 ### 7. TypeScript
 workspace-ide: 0 errors ✅
+
+### Pass status
+[ ] PASS CLOSED — all 6 behavioral scenarios implemented, all evidence present, TypeScript clean
+[ ] PARTIALLY CLOSED — N scenarios incomplete or evidence missing, reason stated
+[ ] BLOCKED — implementation cannot proceed, blocker described below:
 ```
