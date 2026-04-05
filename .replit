@@ -1,14 +1,10 @@
 modules = ["nodejs-24"]
 
-# Register all artifacts
 [[artifacts]]
 id = "artifacts/api-server"
 
 [[artifacts]]
 id = "artifacts/workspace-ide"
-
-[[artifacts]]
-id = "artifacts/mockup-sandbox"
 
 [deployment]
 router = "application"
@@ -23,7 +19,7 @@ runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
-mode = "parallel"
+mode = "sequential"
 author = "agent"
 
 [[workflows.workflow.tasks]]
@@ -47,10 +43,23 @@ args = "API Server"
 task = "workflow.run"
 args = "Start application"
 
-# Note: Individual artifacts will start their own services
-# - api-server will start on port 3001
-# - workspace-ide will start on port 5173
-# - mockup-sandbox will start on port 8081
+[[workflows.workflow]]
+name = "API Server"
+mode = "sequential"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/api-server run dev"
+
+[[workflows.workflow]]
+name = "Start application"
+mode = "sequential"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/workspace-ide run dev"
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -63,15 +72,9 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-# API configuration (non-sensitive values only)
 ZAI_BASE_URL = "https://api.z.ai/api/coding/paas/v4/"
 
-# Server ports
 API_PORT = "3001"
 IDE_PORT = "5173"
-SANDBOX_PORT = "8081"
 
-# Base paths
 BASE_PATH = "/"
-
-# Note: ZAI_API_KEY should be set as a Replit Secret, not here
