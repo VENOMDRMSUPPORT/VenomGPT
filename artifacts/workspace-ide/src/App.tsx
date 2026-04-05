@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Switch, Route } from "wouter";
 import Workspace from "./pages/workspace";
+import IDEPage from "./pages/ide";
 import HomePage from "./pages/home";
 import SettingsPage from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
@@ -42,6 +43,9 @@ function App() {
             </Route>
             <Route path="/">
               {() => <ProtectedRoute component={HomePage} />}
+            </Route>
+            <Route path="/ide">
+              {() => <ProtectedRoute component={IDEPage} />}
             </Route>
             <Route>
               {() => <ProtectedRoute component={Workspace} />}
