@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   useGetWorkspace,
@@ -485,6 +485,18 @@ export function TopBar({ onNavigateHome }: TopBarProps) {
   const closeFile = useIdeStore((s) => s.closeFile);
   const explorerOpen = useIdeStore((s) => s.explorerOpen);
   const toggleExplorer = useIdeStore((s) => s.toggleExplorer);
+  const viewingTaskId = useIdeStore((s) => s.viewingTaskId);
+  const taskLogs = useIdeStore((s) => s.taskLogs);
+
+  const stagedFilePaths = useMemo<Set<string>>(() => {
+    if (!viewingTaskId) return new Set();
+    const logs = taskLogs[viewingTaskId] ?? [];
+    const checkpointLog = [...logs].reverse().find(l => l.type === 'checkpoint');
+    if (!checkpointLog?.data) return new Set();
+    const data = checkpointLog.data as { staged?: boolean; status?: string; stagedFiles?: string[] };
+    if (!data.staged && data.status !== 'pending') return new Set();
+    return new Set(data.stagedFiles ?? []);
+  }, [taskLogs, viewingTaskId]);
 
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -561,6 +573,12 @@ export function TopBar({ onNavigateHome }: TopBarProps) {
                   <span
                     className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"
                     title="Unsaved"
+                  />
+                )}
+                {!file.isDirty && stagedFilePaths.has(file.path) && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0"
+                    title="Staged changes"
                   />
                 )}
                 <button
