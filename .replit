@@ -43,24 +43,6 @@ args = "API Server"
 task = "workflow.run"
 args = "Start application"
 
-[[workflows.workflow]]
-name = "API Server"
-mode = "sequential"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/api-server run dev"
-
-[[workflows.workflow]]
-name = "Start application"
-mode = "sequential"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/workspace-ide run dev"
-
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
