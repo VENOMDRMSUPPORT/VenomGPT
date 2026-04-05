@@ -1,11 +1,5 @@
 modules = ["nodejs-24"]
 
-[[artifacts]]
-id = "artifacts/api-server"
-
-[[artifacts]]
-id = "artifacts/workspace-ide"
-
 [deployment]
 router = "application"
 deploymentTarget = "autoscale"
@@ -28,20 +22,35 @@ args = "pnpm install"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start services"
-
-[[workflows.workflow]]
-name = "Start services"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "API Server"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Start application"
+
+[[workflows.workflow]]
+name = "API Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/api-server run dev"
+waitForPort = 3001
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/workspace-ide run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+waitForPort = 5173
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -55,8 +64,6 @@ timeoutMs = 20000
 
 [userenv.shared]
 ZAI_BASE_URL = "https://api.z.ai/api/coding/paas/v4/"
-
 API_PORT = "3001"
 IDE_PORT = "5173"
-
 BASE_PATH = "/"
