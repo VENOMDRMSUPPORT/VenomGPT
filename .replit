@@ -22,23 +22,11 @@ args = "pnpm install"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "API Server"
+args = "Start application"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "API Server"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/api-server run dev"
-waitForPort = 3001
+args = "API Server"
 
 [[workflows.workflow]]
 name = "Start application"
@@ -51,6 +39,18 @@ outputType = "webview"
 task = "shell.exec"
 args = "pnpm --filter @workspace/workspace-ide run dev"
 waitForPort = 5173
+
+[[workflows.workflow]]
+name = "API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/api-server run dev"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -75,3 +75,7 @@ externalPort = 80
 [[ports]]
 localPort = 5173
 externalPort = 5173
+
+[[ports]]
+localPort = 5174
+externalPort = 3000
