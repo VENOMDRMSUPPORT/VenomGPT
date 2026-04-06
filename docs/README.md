@@ -1,6 +1,6 @@
 # VenomGPT Documentation Pack
 
-**Last validated**: April 6, 2026 (post Tasks #1–#16 + HITL Recovery + Orchestration Roadmap Phases 1–4 + P3/P4 Closeout + Provider-Layer Stabilization Arc Tasks #18–#22 + Repo Cleanup + Backend Closeout Pass: agentContinuation.ts extraction, agent.ts 993 lines, 31 tests passing + Pass 4: Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel + Pass 5: Product Polish — settings toasts, task history search/filter chips, board status-change buttons + plan badges, live prompt suggestions, provider diagnostics panel on integrations page)
+**Last validated**: April 6, 2026 (post Tasks #1–#16 + HITL Recovery + Orchestration Roadmap Phases 1–4 + P3/P4 Closeout + Provider-Layer Stabilization Arc Tasks #18–#22 + Repo Cleanup + Backend Closeout Pass: agentContinuation.ts extraction, agent.ts 993 lines, 31 tests passing + Pass 4: Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel + Pass 5: Product Polish — settings toasts, task history search/filter chips, board status-change buttons + plan badges, live prompt suggestions, provider diagnostics panel on integrations page + Pass 6: API Base URL Audit — 33 fetch calls fixed across 12 files + Pass 7: Projects / Workspace Manager — live project UI in apps.tsx + Pass 8: Remaining Orchestration Surfaces — per-lane contribution summary + scheduling deeplink)
 
 ## What This Is
 
@@ -108,7 +108,7 @@ This judgment is **backend-wise only**. It is not a claim of parity with Replit 
 
 ### What Is Still Open
 
-- Premium workspace orchestration surface (remaining surfaces) — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence and continuation lineage are now done in Pass 4
+- Premium workspace orchestration surface (remaining) — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, per-lane contribution summary, and scheduling deeplink are done (Pass 4 + Pass 8)
 - Advanced action filtering in transcript (filter by type, search by path/command text in transcript tab — EvidencePanel already has this)
 
 ### Provider / Runtime
@@ -130,7 +130,7 @@ This judgment is **backend-wise only**. It is not a claim of parity with Replit 
 
 ## Next Highest-Value Directions
 
-1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence panel, continuation lineage view, approval gate UI, and provider diagnostics are now done (Pass 4)
+1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, provider diagnostics, per-lane contribution summary, and scheduling deeplink are now done (Pass 4 + Pass 8)
 2. **Advanced action filtering / search in transcript** — filter transcript tab by action type, search by file path or command; EvidencePanel (Inspect tab) already has this; transcript tab does not
 
 ---

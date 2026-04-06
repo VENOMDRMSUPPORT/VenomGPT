@@ -2,7 +2,7 @@
 
 ## Current Position
 
-The VenomGPT backend trust stack is materially complete through Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing). Orchestration architecture, execution gating, staged isolation, durable checkpoint/rollback, runtime-aware verification, persistent observability, task replay, lifecycle maturity, action-level execution, live WebSocket action streaming, replay/evidence UI, execution history inspection, tool introspection, dependency classification groundwork, bounded semi-parallel read burst, runtime-impact signaling, operator intervention (pause/resume/proceed-as-partial), Human-in-the-Loop recovery, **parallel dispatch foundations, checkpoint-aware continuation chains, operator steering / approval workflows, verification-orchestrated execution, per-file checkpoint operator UX, runtime lifecycle depth, a stabilized Z.A.I-only provider runtime (`providerRouter.ts` + `ZaiDriver.ts`), and a 31-test automated regression baseline** are all confirmed working.
+The VenomGPT backend trust stack is materially complete through Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing). Orchestration architecture, execution gating, staged isolation, durable checkpoint/rollback, runtime-aware verification, persistent observability, task replay, lifecycle maturity, action-level execution, live WebSocket action streaming, replay/evidence UI, execution history inspection, tool introspection, dependency classification groundwork, bounded semi-parallel read burst, runtime-impact signaling, operator intervention (pause/resume/proceed-as-partial), Human-in-the-Loop recovery, **parallel dispatch foundations, checkpoint-aware continuation chains, operator steering / approval workflows, verification-orchestrated execution, per-file checkpoint operator UX, runtime lifecycle depth, a stabilized Z.A.I-only provider runtime (`providerRouter.ts` + `ZaiDriver.ts`), a 31-test automated regression baseline, API base URL hardening (Pass 6), a live Projects/Workspace Manager UI (Pass 7), and per-lane orchestration contribution summaries + scheduling deeplink (Pass 8)** are all confirmed working.
 
 Frontend and product experience are in a strong position. The remaining open areas are incremental rather than foundational.
 
@@ -44,6 +44,9 @@ These areas are effectively closed and should not be framed as upcoming work:
 - Route extraction and test scaffolding (Backend Closeout Pass): `routes/agentContinuation.ts` extracted from `agent.ts` (continuation/recovery routes — `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`); `agent.ts` reduced from 1905 to 993 lines; 31 automated tests added and passing (`health.test.ts`, `responseNormalizer.test.ts`, `safety.test.ts`)
 - Premium Orchestration UI Surface (Pass 4): `OrchestrationBlock` (lane dispatch data in Evidence Panel), continuation lineage view, `ApprovalGateCard` (with `checkpointId` + `APPROVAL_CHECKPOINT` source, Approve all / Deny / Approve selective wired), `SelectivelyBlockedLaneGrid` (compact lane status grid for `selectively_blocked` phase), `ProviderDiagnosticsPanel` (wired to `GET /provider-diagnostics`, accessible from settings and integrations pages), runtime status bar wired to `GET /runtime/status`
 - Product Polish (Pass 5): settings page load/save/reset/clear with toast feedback; task history search + status filter chips + match count; board status-change buttons (`updateBoardTaskStatus`) + plan association badges (`GET /board/plans`); workspace composer prompt suggestions (`GET /board/prompts`); `ProviderDiagnosticsPanel` on integrations page — closes PP1 (Settings) and PP2 (Task History UX)
+- API Base URL Audit (Pass 6): 33 root-relative `fetch('/api/…')` calls fixed across 12 frontend files; `API_BASE` pattern applied consistently; no silent fallbacks
+- Projects / Workspace Manager (Pass 7): "Coming Soon" banner in `apps.tsx` replaced with live project list, create form, workspace select (active indicator), inline description edit, delete with 409 active-project guard — all wired to confirmed `/projects` backend routes; no backend changes
+- Remaining Orchestration Surfaces (Pass 8): `OrchestrationBlock` expandable per lane (WRITE_FILE + EXEC_COMMAND, READ_FILE excluded, serial fallback labeled "Serial"); "View scheduling analysis →" deeplink in Transcript tab (condition: `dependencyAnalysis` present in evidence; target: Inspect tab)
 
 ---
 
@@ -53,14 +56,13 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 **What it is**: Expose the remaining orchestration capability cleanly in the product.
 
-**What is already done (Pass 4)**: Lane-level evidence panel (`OrchestrationBlock`), continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), `ProviderDiagnosticsPanel`.
+**What is already done (Pass 4 + Pass 8)**: Lane-level evidence panel (`OrchestrationBlock`), continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), `ProviderDiagnosticsPanel`, per-lane contribution summary (expandable WRITE_FILE + EXEC_COMMAND per lane), "View scheduling analysis →" deeplink.
 
 **Why now**: The foundation is fully in place. The remaining surfaces are additive UI passes with no backend architectural risk.
 
 **Scope (remaining)**:
 - Dependency graph view: visual or structured representation of the dispatch graph for a run
 - Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Merge result explanation: per-lane contribution summary in the merged output
 - Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
 
 **Risk**: Medium — UI work with no backend architectural risk. Individual pieces are additive.

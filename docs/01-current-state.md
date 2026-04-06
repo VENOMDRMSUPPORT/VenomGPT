@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the confirmed current state of VenomGPT as of the closeout of Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), Pass 4 (Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard with checkpointId + APPROVAL_CHECKPOINT source, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel), and Pass 5 (Product Polish — settings page toasts, task history search/filter chips + match count, board status-change buttons + plan association badges, live prompt suggestions, provider diagnostics on integrations page). It separates what is confirmed working, what is partially validated, what is still open, and what is intentionally deferred.
+This document describes the confirmed current state of VenomGPT as of the closeout of Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), Pass 4 (Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard with checkpointId + APPROVAL_CHECKPOINT source, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel), Pass 5 (Product Polish — settings page toasts, task history search/filter chips + match count, board status-change buttons + plan association badges, live prompt suggestions, provider diagnostics on integrations page), Pass 6 (API Base URL Audit — 33 root-relative fetch calls fixed across 12 files), Pass 7 (Projects / Workspace Manager — live project list, create, select, inline description edit, delete with 409 guard in `apps.tsx`), and Pass 8 (Remaining Orchestration Surfaces — per-lane contribution summary in OrchestrationBlock, scheduling analysis deeplink in Transcript tab). It separates what is confirmed working, what is partially validated, what is still open, and what is intentionally deferred.
 
 ---
 
@@ -285,6 +285,26 @@ This document describes the confirmed current state of VenomGPT as of the closeo
 - Board kanban: status-change buttons wired via `updateBoardTaskStatus` (button-based, no drag-and-drop); plan association badges shown on each board card pulled from `GET /board/plans`
 - Workspace composer prompt suggestions: up to 3 suggestions from `GET /board/prompts` appear as clickable chips when composer is idle and no task is active; clicking fills the composer input
 - Integrations page `ProviderDiagnosticsPanel`: replaces placeholder content; shows Z.A.I provider status, model, lanes, and connection health from `GET /provider-diagnostics`
+
+**API Base URL Audit (Pass 6)**
+- 33 root-relative `fetch('/api/…')` calls fixed across 12 frontend files
+- Pattern: `const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? ''` — prepended to every `/api/` path
+- Files: `apps.tsx`, `evidence-panel.tsx`, `task-console.tsx`, `integrations.tsx`, `home-screen.tsx`, and 7 others
+- No silent fallbacks; no backend changes
+
+**Projects / Workspace Manager (Pass 7)**
+- `apps.tsx` — "Coming Soon" banner replaced with a live project management UI
+- `useListProjects()`: drives the project grid with loading, error, and empty states
+- `CreateProjectForm`: wired to `useCreateProject()` with inline `invalid_name` / `already_exists` error mapping; invalidates `getListProjectsQueryKey()` on success
+- `useSelectProject()`: post-select invalidation of `getGetWorkspaceQueryKey()` + `getListFilesQueryKey()`; confirmed pattern from home-screen.tsx
+- Active indicator: sourced from `useGetWorkspace()` → `data?.root` vs `project.path` (no optimistic switching)
+- `DescriptionEditor`: inline PATCH via raw fetch; save on Enter, cancel on Escape
+- `DeleteDialog`: modal confirmation; `409 active_project` → user-readable message; `404` → success (list refresh)
+- No backend changes; no drag-and-drop; no invented hooks
+
+**Remaining Orchestration Surfaces (Pass 8)**
+- `OrchestrationBlock` (`evidence-panel.tsx`): expandable per-lane contribution summary; accepts `actions?: ActionRecord[]`; `expandedLanes` state + `toggleLane()`; WRITE_FILE + EXEC_COMMAND shown per lane; READ_FILE excluded; serial fallback lanes labeled "Serial"
+- Scheduling analysis deeplink (`task-console.tsx`): `useTaskEvidence(viewingTaskId)` read directly; `hasDependencyAnalysis` from `linkEvidenceData?.taskEvidence?.executionSummary?.dependencyAnalysis`; "View scheduling analysis →" link in Transcript tab; clicking `setActiveTab('inspect')`
 
 **WebSocket Streaming**
 - All agent events stream live via WebSocket

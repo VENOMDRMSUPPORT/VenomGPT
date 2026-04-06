@@ -380,9 +380,30 @@ Board status-change buttons were wired via `updateBoardTaskStatus` (button-based
 
 ---
 
+### Frontend Audit & Product Completion Arc (Passes 6–8)
+
+After Pass 5, a focused frontend audit and product completion arc closed three remaining surface gaps:
+
+**Pass 6 — API Base URL Audit & Fetch Hardening**
+Audited every `fetch()` call in the IDE frontend and corrected 33 root-relative `/api/…` paths across 12 files. The fix pattern — `const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? ''` prefixed to all API paths — ensures correct routing whether the IDE is served from the root or a sub-path. Files covered include `apps.tsx`, `evidence-panel.tsx`, `task-console.tsx`, `integrations.tsx`, `home-screen.tsx`, and 7 others. No silent fallbacks; no backend changes.
+
+**Pass 7 — Projects / Workspace Manager**
+Replaced the "Coming Soon" banner in `apps.tsx` with a full project management UI backed by the existing `/projects` backend (list, create, patch, delete, select — all routes already complete). Three bounded sub-groups:
+- **Sub-group A**: `useListProjects()` drives the project grid with loading, error, and empty states; `CreateProjectForm` wired to `useCreateProject()` with inline `invalid_name` / `already_exists` error mapping.
+- **Sub-group B**: `useSelectProject()` with post-select invalidation of `getGetWorkspaceQueryKey()` + `getListFilesQueryKey()`; active indicator sourced from `useGetWorkspace()` → `data?.root` compared against `project.path`. No optimistic switching — verified source only.
+- **Sub-group C**: Inline `DescriptionEditor` via raw `PATCH /api/projects/:name`; `DeleteDialog` modal with `409 active_project` user-readable message and `404`-as-success refresh.
+No backend changes, no drag-and-drop, no invented hooks.
+
+**Pass 8 — Remaining Orchestration Surfaces**
+Closed two remaining visual gaps in the orchestration UI:
+- **Per-lane contribution summary** (`evidence-panel.tsx`): `OrchestrationBlock` now accepts `actions?: ActionRecord[]`; per-lane expand toggle (`expandedLanes` state + `toggleLane()`); WRITE_FILE and EXEC_COMMAND shown per lane, READ_FILE excluded; serial fallback lanes labeled "Serial".
+- **Scheduling analysis deeplink** (`task-console.tsx`): `useTaskEvidence(viewingTaskId)` read directly in `TaskConsole`; `hasDependencyAnalysis` computed from `linkEvidenceData?.taskEvidence?.executionSummary?.dependencyAnalysis`; "View scheduling analysis →" link shown in Transcript tab when condition is true; clicking calls `setActiveTab('inspect')`.
+
+---
+
 ## Current Project Position
 
-VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`), a full premium orchestration UI surface (Pass 4), and a complete product polish layer (Pass 5)**.
+VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`), a full premium orchestration UI surface (Pass 4), a complete product polish layer (Pass 5), a hardened API base URL layer (Pass 6), a live Projects/Workspace Manager UI (Pass 7), and per-lane orchestration contribution summaries + scheduling deeplink (Pass 8)**.
 
 **Backend orchestration / execution trust / lifecycle maturity is very strong.**
 
@@ -413,12 +434,15 @@ The project is no longer in an early MVP state. It is no longer a fragile shell.
 | Settings page (PP1, Pass 5 Sub-group A) | Load/save/reset/clear wired with toast feedback |
 | Task history UX (PP2, Pass 5 Sub-group B) | Search input, status filter chips, match count; bulk-delete deferred (no per-task endpoint) |
 | Board kanban + prompt suggestions + integrations provider status (Pass 5 Sub-group C) | Status-change buttons, plan badges, prompt suggestions in composer, ProviderDiagnosticsPanel on integrations page |
+| API Base URL Audit (Pass 6) | 33 root-relative fetch calls fixed across 12 files; `API_BASE` pattern applied consistently |
+| Projects / Workspace Manager (Pass 7) | Live project list, create, select (active indicator), inline description edit, delete with 409 guard — all wired to confirmed backend routes |
+| Per-lane contribution summary + scheduling deeplink (Pass 8) | `OrchestrationBlock` expandable per lane (WRITE_FILE + EXEC_COMMAND only); "View scheduling analysis →" deeplink in Transcript tab |
 
 ### Still Open
 
 | Area | Status |
 |---|---|
-| Premium workspace orchestration surface (remaining) | Partially done (Pass 4); remaining: dependency graph view, scheduler reasoning surface, replay at orchestration scale |
+| Premium workspace orchestration surface (remaining) | Partially done (Pass 4 + Pass 8); remaining: dependency graph view, scheduler reasoning surface, replay at orchestration scale |
 | Advanced action filtering / search in transcript tab | Open — infrastructure in place; EvidencePanel has this; transcript tab does not |
 
 ### Intentionally Deferred (No Timeline)
@@ -438,5 +462,5 @@ The project is no longer in an early MVP state. It is no longer a fragile shell.
 
 ## Next Highest-Value Directions
 
-1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, and provider diagnostics are now done (Pass 4)
+1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, provider diagnostics, per-lane contribution summary, and scheduling deeplink are now done (Pass 4 + Pass 8)
 2. **Advanced action filtering / search in transcript tab** — filter transcript tab by action type, search by file path or command; EvidencePanel (Inspect tab) already has this; transcript tab does not

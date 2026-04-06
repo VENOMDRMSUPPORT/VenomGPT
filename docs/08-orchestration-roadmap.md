@@ -88,10 +88,13 @@ The core orchestration arc is closed. The next maturity arc is the product surfa
 - Approval gate UI (`ApprovalGateCard` with Approve all / Deny / Approve selective; `SelectivelyBlockedLaneGrid`)
 - Provider diagnostics panel (`ProviderDiagnosticsPanel` wired to `GET /provider-diagnostics`)
 
+**Delivered in Pass 8** (closed):
+- Per-lane contribution summary: `OrchestrationBlock` now expandable per lane; shows WRITE_FILE + EXEC_COMMAND actions per lane; READ_FILE excluded; serial fallback lanes labeled "Serial"
+- Scheduling analysis deeplink: "View scheduling analysis →" in Transcript tab navigates to Inspect tab when `dependencyAnalysis` evidence is present
+
 **Remaining scope**:
 - Dependency graph view: visual or structured representation of the dispatch graph for a run
 - Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Merge result explanation: per-lane contribution summary in the merged output
 - Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
 
 **Why now**: All four orchestration phases are complete. The underlying model is stable. Exposing surfaces before the model was stable would have created UI drift. Now the UI pass is both safe and high-leverage.
@@ -171,7 +174,7 @@ The core orchestration arc is closed. The next maturity arc is the product surfa
 
 | Area | Status |
 |---|---|
-| Premium workspace orchestration surface (Direction 1) | Open — the highest-value next direction post-core |
+| Premium workspace orchestration surface (Direction 1) | Partially done (Pass 4 + Pass 8); remaining: dependency graph, scheduler reasoning, replay at scale |
 | Advanced action filtering / search in transcript | Open — infrastructure exists; filter UI not wired |
 | MCP / ecosystem / integration surfaces | Deferred — longer horizon; requires stable core first |
 | `summaryEmitter` extraction | Intentionally deferred — touches messages thread |

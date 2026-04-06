@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document lists pending and deferred work areas. Backend trust phases and UI surfaces that are effectively closed are not listed here as upcoming work. The list reflects the genuine current open areas after Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), Pass 4 (Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel), and Pass 5 (Product Polish — settings toasts, history search/filter, board status-change buttons, prompt suggestions, integrations provider diagnostics), not historical priorities.
+This document lists pending and deferred work areas. Backend trust phases and UI surfaces that are effectively closed are not listed here as upcoming work. The list reflects the genuine current open areas after Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), Pass 4 (Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel), Pass 5 (Product Polish — settings toasts, history search/filter, board status-change buttons, prompt suggestions, integrations provider diagnostics), Pass 6 (API Base URL Audit — 33 fetch calls fixed across 12 files), Pass 7 (Projects / Workspace Manager — live project UI in `apps.tsx`), and Pass 8 (Remaining Orchestration Surfaces — per-lane contribution summary + scheduling deeplink), not historical priorities.
 
 ---
 
@@ -48,6 +48,9 @@ The following areas were previously pending and are now done. They should not re
 - PP1 — Settings Page (Pass 5 Sub-group A): settings load from `GET /settings` on mount; save via `PATCH /settings` with success/error toast; "Reset to defaults" via `POST /settings/reset` with confirmation; "Clear task history" via `DELETE /settings/history` with confirmation
 - PP2 — Task History UX (Pass 5 Sub-group B): search input filters tasks by prompt text (client-side); status filter chips (done, error, cancelled, interrupted); match count when filter active; bulk-delete deferred (no per-task delete endpoint)
 - Board kanban + prompt suggestions + integrations provider status (Pass 5 Sub-group C): status-change buttons via `updateBoardTaskStatus` (no drag-and-drop); plan association badges from `GET /board/plans`; up to 3 prompt suggestions from `GET /board/prompts` as clickable chips in workspace composer; `ProviderDiagnosticsPanel` on integrations page
+- API Base URL Audit (Pass 6): 33 root-relative `fetch('/api/…')` calls fixed across 12 frontend files; `const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? ''` pattern applied; no silent fallbacks; no backend changes
+- Projects / Workspace Manager (Pass 7): `apps.tsx` "Coming Soon" banner replaced with live project list (`useListProjects()`), create form (`useCreateProject()`), workspace select (`useSelectProject()` + `getGetWorkspaceQueryKey()` + `getListFilesQueryKey()` invalidation), active indicator (`useGetWorkspace()` → `data?.root` vs `project.path`), inline description edit (raw PATCH), delete with 409 guard; no backend changes
+- Remaining Orchestration Surfaces (Pass 8): `OrchestrationBlock` expandable per lane — WRITE_FILE + EXEC_COMMAND shown, READ_FILE excluded, serial fallback labeled "Serial"; "View scheduling analysis →" deeplink in Transcript tab conditioned on `dependencyAnalysis` presence, navigates to Inspect tab
 
 ---
 
@@ -55,14 +58,13 @@ The following areas were previously pending and are now done. They should not re
 
 ### P1 — Premium Workspace Orchestration Surface (Remaining)
 
-**Status**: Partially done. Pass 4 delivered: lane-level evidence panel, continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), and `ProviderDiagnosticsPanel`. Remaining scope below.
+**Status**: Partially done. Pass 4 delivered: lane-level evidence panel, continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), and `ProviderDiagnosticsPanel`. Pass 8 delivered: per-lane contribution summary and scheduling deeplink. Remaining scope below.
 
 **What**: Expose the remaining orchestration capability in the product.
 
 **Scope (remaining)**:
 - Dependency graph view: visual or structured representation of the dispatch graph for a run
 - Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Merge result explanation: per-lane contribution summary in the merged output
 - Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
 
 **Why**: The foundation is in place and the model is stable. The remaining surfaces are additive UI work with no backend risk.
@@ -113,7 +115,7 @@ These items are explicitly deferred and should not be planned until the rational
 | Checkpoint duplication consolidation | Low incremental leverage; safe to defer indefinitely |
 | `visualPipeline` extraction | Touches while-loop skeleton; stability risk outweighs benefit |
 | Broader platform / ecosystem expansion | Longer horizon; depends on product maturity first |
-| Multi-workspace support | Single workspace per server instance is intentional for local-first design |
+| Multi-workspace parallel views | Switching between projects is supported; simultaneous multi-root views are out of scope |
 | Codex driver — Phase 3 (`OpenAICodexDriver`) | Explicitly deferred. Requires: (1) explicit product decision to re-enable Codex, (2) confirmation of correct `chatgpt.com/backend-api/codex` request/response schema before any code is written, (3) a dedicated implementation pass. Re-entry conditions are documented in the Z.A.I-Only Baseline Closeout Record (Task #21). |
 | OpenAI Platform API driver — Phase 4 (`OpenAIPlatformDriver`) | Explicitly deferred. Gated on a post-Phase-3 decision. Only implemented if explicitly decided after Phase 3 completes. |
 | Qwen integration — Phase 5 (`QwenDriver`) | Explicitly deferred. Qwen's actual integration mode (API key, OAuth, or OpenAI-compatible host) is unknown. No driver is implemented until the integration mode is confirmed. |
