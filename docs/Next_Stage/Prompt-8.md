@@ -85,8 +85,10 @@ Do not write any component code until all four items are confirmed.
 ### Step A1 — Expandable lane rows
 
 Extend the per-lane rows in `OrchestrationBlock` to be expandable (toggle on
-click). When collapsed, the row shows the same content as today. When expanded,
-it shows the filtered action list for that lane.
+click). When collapsed, the row must be visually identical to the current
+baseline — the only addition is the expand affordance (chevron or similar).
+Do not redesign or restyle the collapsed row. When expanded, it shows the
+filtered action list for that lane.
 
 ### Step A2 — Action list per lane
 

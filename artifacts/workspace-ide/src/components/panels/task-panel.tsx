@@ -14,6 +14,8 @@ import { getListAgentTasksQueryKey, getGetWorkspaceQueryKey, getListFilesQueryKe
 import { compressImage } from '@/lib/imageUtils';
 import { RuntimeStatusBar } from '@/components/ui/runtime-status-bar';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TaskFailureDetail {
@@ -222,7 +224,7 @@ export function TaskPanel() {
     const assetPath = `attached_assets/${ts}_${filename}`;
     const isDataUrl = content.startsWith('data:');
     try {
-      const res = await fetch('/api/files/write', {
+      const res = await fetch(`${API_BASE}/api/files/write`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: assetPath, content, ...(isDataUrl ? { encoding: 'dataurl' } : {}) }),
@@ -325,7 +327,7 @@ export function TaskPanel() {
   const handleCancel = async () => {
     if (!activeTaskId) return;
     try {
-      await fetch(`/api/agent/tasks/${activeTaskId}/cancel`, { method: 'POST' });
+      await fetch(`${API_BASE}/api/agent/tasks/${activeTaskId}/cancel`, { method: 'POST' });
       clearActiveTask();
       queryClient.invalidateQueries({ queryKey: getListAgentTasksQueryKey() });
     } catch (err) {
@@ -337,7 +339,7 @@ export function TaskPanel() {
     e.stopPropagation();
     setDeletingId(taskId);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}`, { method: 'DELETE' });
       if (res.ok) {
         if (activeTaskId === taskId) clearActiveTask();
         if (expandedTaskId === taskId) setExpandedTaskId(null);
@@ -368,7 +370,7 @@ export function TaskPanel() {
     setExpandedTaskId(prev => prev === task.id ? null : task.id);
     if (task.status !== 'running' && !taskLogsLoaded.has(task.id)) {
       try {
-        const res = await fetch(`/api/agent/tasks/${task.id}/events`);
+        const res = await fetch(`${API_BASE}/api/agent/tasks/${task.id}/events`);
         if (res.ok) {
           const data = await res.json() as { events: BackendEvent[] };
           hydrateTaskEvents(task.id, data.events ?? []);

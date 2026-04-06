@@ -10,6 +10,8 @@ import {
 import { format } from 'date-fns';
 import { triggerRecheckRuntime } from '@/components/ui/runtime-status-bar';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // Stable empty array — prevents Zustand infinite re-render via reference equality
 const EMPTY_LOGS: AgentLogEvent[] = [];
 
@@ -746,7 +748,7 @@ function CheckpointCard({ data }: { data: CheckpointData }) {
   // Fetch live staged files from the checkpoint API and update local state.
   const refreshLiveStagedFiles = useCallback(async () => {
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/checkpoint`);
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/checkpoint`);
       if (!res.ok) { setLiveStagedFiles(new Set()); return; }
       const body = await res.json() as { status?: string; stagedFiles?: string[] };
       if (body.status === 'pending' && Array.isArray(body.stagedFiles)) {
@@ -769,7 +771,7 @@ function CheckpointCard({ data }: { data: CheckpointData }) {
   const refreshHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/checkpoint-history`);
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/checkpoint-history`);
       if (res.ok) {
         const body = await res.json() as { history: CheckpointHistoryEntry[] };
         setHistory(body.history ?? []);
@@ -797,7 +799,7 @@ function CheckpointCard({ data }: { data: CheckpointData }) {
     setLoading('discard');
     setError(null);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/discard`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/discard`, { method: 'POST' });
       const body = await res.json();
       if (!res.ok) throw new Error(body.message ?? 'Discard failed');
       setStatus('discarded');
@@ -813,7 +815,7 @@ function CheckpointCard({ data }: { data: CheckpointData }) {
     setLoading('apply');
     setError(null);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/apply`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/apply`, { method: 'POST' });
       const body = await res.json();
       if (!res.ok) throw new Error(body.message ?? 'Apply failed');
       setStatus('applied');
@@ -829,7 +831,7 @@ function CheckpointCard({ data }: { data: CheckpointData }) {
   const handleApplyFile = async (filePath: string) => {
     setFileActions(prev => ({ ...prev, [filePath]: 'loading' }));
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/apply-file`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/apply-file`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filePath }),
@@ -852,7 +854,7 @@ function CheckpointCard({ data }: { data: CheckpointData }) {
   const handleDiscardFile = async (filePath: string) => {
     setFileActions(prev => ({ ...prev, [filePath]: 'loading' }));
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/discard-file`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/discard-file`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filePath }),

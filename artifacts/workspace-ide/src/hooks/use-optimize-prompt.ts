@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 interface OptimizeState {
   isOptimizing: boolean;
   optimizedResult: string | null;
@@ -25,7 +27,7 @@ export function useOptimizePrompt(): UseOptimizePromptReturn {
     setState({ isOptimizing: true, optimizedResult: null, error: null });
 
     try {
-      const response = await fetch('/api/prompt/optimize', {
+      const response = await fetch(`${API_BASE}/api/prompt/optimize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: trimmed }),

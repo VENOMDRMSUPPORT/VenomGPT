@@ -29,6 +29,8 @@ import {
   type ActionType,
 } from '@/lib/actionSelectors';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CONSOLE_WIDTH = 300;
@@ -1157,7 +1159,7 @@ function CheckpointCard({
   const handleDiscard = async () => {
     setLoading('discard'); setError(null);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/discard`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/discard`, { method: 'POST' });
       const body = await res.json();
       if (!res.ok) throw new Error(body.message ?? 'Discard failed');
       setStatus('discarded'); setRestored(body.restoredFiles ?? []);
@@ -1168,7 +1170,7 @@ function CheckpointCard({
   const handleApply = async () => {
     setLoading('apply'); setError(null);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/apply`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/apply`, { method: 'POST' });
       const body = await res.json();
       if (!res.ok) throw new Error(body.message ?? 'Apply failed');
       setStatus('applied');
@@ -1375,7 +1377,7 @@ function ApprovalGateCard({ taskId, livePhase, actions }: {
   const callEndpoint = async (action: ApprovalAction, body: Record<string, unknown>) => {
     setLoading(action); setError(null);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}/${action === 'selective' ? 'approve-selective' : action}`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/${action === 'selective' ? 'approve-selective' : action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -1627,7 +1629,7 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
     let cancelled = false;
     const seed = async () => {
       try {
-        const res = await fetch(`/api/agent/runs/${activeTaskId}/actions`);
+        const res = await fetch(`${API_BASE}/api/agent/runs/${activeTaskId}/actions`);
         if (!res.ok || cancelled) return;
         const body = await res.json() as { taskId: string; count: number; actions: ActionRecord[] };
         if (!cancelled) mergeTaskActions(activeTaskId, body.actions ?? []);
@@ -1655,7 +1657,7 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
     let cancelled = false;
     const fetch_ = async () => {
       try {
-        const res = await fetch(`/api/agent/runs/${viewingTaskId}/actions`);
+        const res = await fetch(`${API_BASE}/api/agent/runs/${viewingTaskId}/actions`);
         if (!res.ok || cancelled) return;
         const body = await res.json() as { taskId: string; count: number; actions: ActionRecord[] };
         if (!cancelled) {

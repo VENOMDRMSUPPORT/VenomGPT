@@ -84,7 +84,7 @@ export function WorkspaceComposer() {
     const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
     const isDataUrl = content.startsWith('data:');
     try {
-      await fetch('/api/files/write', {
+      await fetch(`${API_BASE}/api/files/write`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: `attached_assets/${ts}_${filename}`, content, ...(isDataUrl ? { encoding: 'dataurl' } : {}) }),
@@ -95,7 +95,7 @@ export function WorkspaceComposer() {
   const persistPrompt = useCallback(async (promptText: string) => {
     const ts = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
     try {
-      await fetch('/api/files/write', {
+      await fetch(`${API_BASE}/api/files/write`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: `attached_assets/${ts}_prompt.md`, content: promptText }),
@@ -152,7 +152,7 @@ export function WorkspaceComposer() {
   const handleCancel = useCallback(async () => {
     if (!activeTaskId) return;
     try {
-      await fetch(`/api/agent/tasks/${activeTaskId}/cancel`, { method: 'POST' });
+      await fetch(`${API_BASE}/api/agent/tasks/${activeTaskId}/cancel`, { method: 'POST' });
       clearActiveTask();
       queryClient.invalidateQueries({ queryKey: getListAgentTasksQueryKey() });
     } catch { /* silent */ }

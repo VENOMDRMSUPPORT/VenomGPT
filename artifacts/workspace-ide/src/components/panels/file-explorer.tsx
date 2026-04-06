@@ -9,6 +9,8 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { getListFilesQueryKey } from '@workspace/api-client-react';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // ─── Stage parsing (shared with output-panel) ─────────────────────────────────
 
 const STAGE_TAGS = ['PLANNING', 'INSPECTING', 'EDITING', 'VERIFYING', 'REPAIRING', 'WRAPPING UP'] as const;
@@ -152,7 +154,7 @@ function useStagedFiles(taskId: string | null): Map<string, StagedFileInfo> {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch(`/api/agent/tasks/${taskId}/checkpoint`);
+        const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/checkpoint`);
         if (cancelled) return;
         if (!res.ok) {
           setStagedMap(new Map());
@@ -388,7 +390,7 @@ function TreeNode({
       setIsOpen(!isOpen);
     } else {
       try {
-        const res = await fetch(`/api/files/read?path=${encodeURIComponent(entry.path)}`);
+        const res = await fetch(`${API_BASE}/api/files/read?path=${encodeURIComponent(entry.path)}`);
         if (res.ok) {
           const data = await res.json();
           openFile({ path: data.path, content: data.content, language: data.language, isDirty: false });

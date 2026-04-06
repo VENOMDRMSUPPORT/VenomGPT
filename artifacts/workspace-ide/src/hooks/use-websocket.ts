@@ -5,6 +5,8 @@ import type { LivePhaseState, RunPhase } from '@/store/use-ide-store';
 import { getListAgentTasksQueryKey, getListFilesQueryKey } from '@workspace/api-client-react';
 import type { ActionRecord } from '@/lib/actionSelectors';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 const KNOWN_RUN_PHASES: readonly RunPhase[] = [
   "initializing", "planning", "inspecting", "executing",
   "verifying", "repairing", "wrapping_up", "complete", "blocked", "failed",
@@ -66,7 +68,7 @@ export function useWebSocket() {
           // Uses merge semantics so no in-flight WS upserts are overwritten.
           const liveTaskId = activeTaskIdRef.current;
           if (liveTaskId) {
-            fetch(`/api/agent/runs/${liveTaskId}/actions`)
+            fetch(`${API_BASE}/api/agent/runs/${liveTaskId}/actions`)
               .then(r => r.ok ? r.json() : null)
               .then((body: { taskId: string; count: number; actions: ActionRecord[] } | null) => {
                 if (!unmounted && body?.actions) {
@@ -109,7 +111,7 @@ export function useWebSocket() {
                 const isOpen = openFilesRef.current.some(f => f.path === writtenPath);
                 if (isOpen) {
                   try {
-                    const res = await fetch(`/api/files/read?path=${encodeURIComponent(writtenPath)}`);
+                    const res = await fetch(`${API_BASE}/api/files/read?path=${encodeURIComponent(writtenPath)}`);
                     if (res.ok) {
                       const fileData = await res.json() as { path: string; content: string; language: string };
                       openFile({ path: fileData.path, content: fileData.content, language: fileData.language, isDirty: false });

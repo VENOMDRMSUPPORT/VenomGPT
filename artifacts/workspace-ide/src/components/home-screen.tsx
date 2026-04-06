@@ -38,6 +38,8 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function formatDate(iso?: string): string {
@@ -166,7 +168,7 @@ function EditProjectDialog({
     setSaving(true);
     setError('');
     try {
-      const res = await fetch(`/api/projects/${encodeURIComponent(project.name)}`, {
+      const res = await fetch(`${API_BASE}/api/projects/${encodeURIComponent(project.name)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: description.trim() }),
@@ -891,7 +893,7 @@ export function HomeScreen({ onProjectSelected }: HomeScreenProps) {
     if (!deletingProject) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/projects/${encodeURIComponent(deletingProject.name)}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/projects/${encodeURIComponent(deletingProject.name)}`, { method: 'DELETE' });
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
       } else {

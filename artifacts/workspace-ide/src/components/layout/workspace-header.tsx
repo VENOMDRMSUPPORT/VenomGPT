@@ -28,6 +28,8 @@ import {
 import { TaskStatusCluster } from '@/components/ui/task-status-cluster';
 import { RuntimeStatusBar } from '@/components/ui/runtime-status-bar';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 function getProjectName(root: string): string {
   if (!root) return '';
   const parts = root.replace(/\\/g, '/').split('/');
@@ -68,7 +70,7 @@ function TaskHistoryDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     setExpandedId(prev => prev === task.id ? null : task.id);
     if (task.status !== 'running' && !taskLogsLoaded.has(task.id)) {
       try {
-        const res = await fetch(`/api/agent/tasks/${task.id}/events`);
+        const res = await fetch(`${API_BASE}/api/agent/tasks/${task.id}/events`);
         if (res.ok) {
           const data = await res.json() as { events: BackendEvent[] };
           hydrateTaskEvents(task.id, data.events ?? []);
@@ -81,7 +83,7 @@ function TaskHistoryDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     e.stopPropagation();
     setDeletingId(taskId);
     try {
-      const res = await fetch(`/api/agent/tasks/${taskId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}`, { method: 'DELETE' });
       if (res.ok) {
         if (activeTaskId === taskId) clearActiveTask();
         if (expandedId === taskId) setExpandedId(null);

@@ -55,6 +55,8 @@ import {
 } from '@/lib/actionSelectors';
 import { ToolIntrospectionPanel } from './tool-introspection-panel';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // ─── Absent-data placeholders ─────────────────────────────────────────────────
 
 function AbsentBlock({ message }: { message: string }) {
@@ -1444,7 +1446,7 @@ function ApprovalWorkflowBlock({ taskId, taskStatus, actions, executionSummary }
           note: selectiveNote || undefined,
         };
       }
-      const res = await fetch(`/api/agent/tasks/${taskId}/${endpoint}`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -2145,7 +2147,7 @@ function LiveApprovalControls({ taskId }: { taskId: string }) {
         endpoint = 'approve-selective';
         body = { checkpointId: pendingGateMeta.checkpointId, approvedLaneIds: [...selectedLaneIds], note: selectiveNote || undefined };
       }
-      const res = await fetch(`/api/agent/tasks/${taskId}/${endpoint}`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

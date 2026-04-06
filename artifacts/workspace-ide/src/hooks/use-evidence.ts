@@ -16,6 +16,8 @@ import type {
 } from '../lib/evidenceTypes';
 import type { ActionRecord } from '@/lib/actionSelectors';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 export type {
   TaskEvidence,
   TaskEvidenceExecutionSummary,
@@ -62,7 +64,7 @@ export function useTaskEvidence(taskId: string | null, enabled = true) {
   return useQuery<EvidenceResponse>({
     queryKey: getTaskEvidenceQueryKey(taskId ?? ''),
     queryFn: async () => {
-      const res = await fetch(`/api/agent/tasks/${taskId}/evidence`);
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${taskId}/evidence`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as { message?: string }).message ?? `HTTP ${res.status}`);
@@ -83,7 +85,7 @@ export function useTaskActions(taskId: string | null, enabled = true) {
   return useQuery<ActionsResponse>({
     queryKey: getTaskActionsQueryKey(taskId ?? ''),
     queryFn: async () => {
-      const res = await fetch(`/api/agent/runs/${taskId}/actions`);
+      const res = await fetch(`${API_BASE}/api/agent/runs/${taskId}/actions`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as { message?: string }).message ?? `HTTP ${res.status}`);
