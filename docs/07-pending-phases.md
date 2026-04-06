@@ -51,6 +51,7 @@ The following areas were previously pending and are now done. They should not re
 - API Base URL Audit (Pass 6): 33 root-relative `fetch('/api/…')` calls fixed across 12 frontend files; `const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? ''` pattern applied; no silent fallbacks; no backend changes
 - Projects / Workspace Manager (Pass 7): `apps.tsx` "Coming Soon" banner replaced with live project list (`useListProjects()`), create form (`useCreateProject()`), workspace select (`useSelectProject()` + `getGetWorkspaceQueryKey()` + `getListFilesQueryKey()` invalidation), active indicator (`useGetWorkspace()` → `data?.root` vs `project.path`), inline description edit (raw PATCH), delete with 409 guard; no backend changes
 - Remaining Orchestration Surfaces (Pass 8): `OrchestrationBlock` expandable per lane — WRITE_FILE + EXEC_COMMAND shown, READ_FILE excluded, serial fallback labeled "Serial"; "View scheduling analysis →" deeplink in Transcript tab conditioned on `dependencyAnalysis` presence, navigates to Inspect tab
+- P2 / PP3 — Advanced Action Filtering / Search (Transcript Tab): confirmed delivered — filter chips by action type, text search by file path or command, collapse all / expand all are present in `task-console.tsx`; equivalent to EvidencePanel (Inspect tab) filter surface
 
 ---
 
@@ -70,38 +71,6 @@ The following areas were previously pending and are now done. They should not re
 **Why**: The foundation is in place and the model is stable. The remaining surfaces are additive UI work with no backend risk.
 
 **Risk**: Medium — UI work, no backend architectural risk. Individual pieces are additive.
-
----
-
-### P2 — Advanced Action Filtering / Search
-
-**Status**: Open — selector infrastructure exists; filter UI not wired in transcript.
-
-**What**: Surface the existing action selector infrastructure in a filtering UI within the transcript console.
-
-**Scope**:
-- Filter by action type (reads only, writes only, commands only, verifications only)
-- Search by file path or command text
-- Collapse all / expand all action groups
-- No backend changes required — all data already present in frontend action state
-- Note: EvidencePanel (Inspect tab) already has filter chips and text search; this brings equivalent filtering to the Transcript tab
-
-**Why**: The data and computation layers (`actionSelectors.ts`) are already in place. This is a UI pass only.
-
-**Risk**: Low — additive UI change, no backend dependencies.
-
----
-
-## Pending: Product Polish (Opportunistic)
-
-PP1 (Settings Page) and PP2 (Task History UX) are **effectively closed** — delivered in Pass 5. See "Effectively Closed" section above.
-
-### PP3 — Advanced Action Filtering (Transcript)
-
-Overlaps with P2 above. Listed here for completeness:
-- Filter by action type in transcript tab (EvidencePanel already has this)
-- Search by file path or command text in transcript tab
-- Collapse all / expand all
 
 ---
 
