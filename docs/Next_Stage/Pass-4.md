@@ -1,5 +1,7 @@
 # Pass 4: Premium Orchestration UI Surface
 
+> **STATUS: COMPLETED** — All six tasks delivered and confirmed. OrchestrationBlock (lane dispatch data in Evidence Panel), continuation lineage view, ApprovalGateCard (with `checkpointId` + `APPROVAL_CHECKPOINT` source), SelectivelyBlockedLaneGrid (compact lane status grid), ProviderDiagnosticsPanel (wired to `GET /provider-diagnostics`), and runtime status wiring are all live. Pass closed April 2026.
+
 ## What & Why
 The backend has four complete orchestration phases: parallel dispatch,
 checkpoint-aware continuation chains, operator approval gates, and

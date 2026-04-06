@@ -42,28 +42,28 @@ These areas are effectively closed and should not be framed as upcoming work:
 - Per-file Apply/Discard, Staging Badges, Checkpoint History, Per-file Diff View (`POST /api/agent/tasks/:taskId/apply-file`, `/discard-file`; per-file buttons in Output panel; `GET .../checkpoint-history`; staging badges; inline unified diff viewer) — P3
 - Runtime Lifecycle Depth (`RuntimeLifecycleRecord`, `captureEnhancedSnapshot()`, `buildRuntimeLifecycleRecord()`; task-start/post-apply snapshots; proactive `isStaleAfterApply` detection; process linkage; `TaskEvidence.runtimeLifecycle` persisted in `history.json`; Runtime Lifecycle section in Evidence Panel) — P4
 - Route extraction and test scaffolding (Backend Closeout Pass): `routes/agentContinuation.ts` extracted from `agent.ts` (continuation/recovery routes — `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`); `agent.ts` reduced from 1905 to 993 lines; 31 automated tests added and passing (`health.test.ts`, `responseNormalizer.test.ts`, `safety.test.ts`)
+- Premium Orchestration UI Surface (Pass 4): `OrchestrationBlock` (lane dispatch data in Evidence Panel), continuation lineage view, `ApprovalGateCard` (with `checkpointId` + `APPROVAL_CHECKPOINT` source, Approve all / Deny / Approve selective wired), `SelectivelyBlockedLaneGrid` (compact lane status grid for `selectively_blocked` phase), `ProviderDiagnosticsPanel` (wired to `GET /provider-diagnostics`, accessible from settings and integrations pages), runtime status bar wired to `GET /runtime/status`
+- Product Polish (Pass 5): settings page load/save/reset/clear with toast feedback; task history search + status filter chips + match count; board status-change buttons (`updateBoardTaskStatus`) + plan association badges (`GET /board/plans`); workspace composer prompt suggestions (`GET /board/prompts`); `ProviderDiagnosticsPanel` on integrations page — closes PP1 (Settings) and PP2 (Task History UX)
 
 ---
 
 ## Highest-Value Next Directions
 
-### 1. Premium Workspace Orchestration Surface
+### 1. Premium Workspace Orchestration Surface (Remaining)
 
-**What it is**: Expose the full orchestration capability cleanly in the product — advanced operator UX, rich inspect surfaces, and replay at orchestration scale.
+**What it is**: Expose the remaining orchestration capability cleanly in the product.
 
-**Why now**: All four orchestration phases are complete and the underlying model is stable. Exposing these surfaces before the model was stable would have created UI drift. Now the UI pass is both safe and high-leverage.
+**What is already done (Pass 4)**: Lane-level evidence panel (`OrchestrationBlock`), continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), `ProviderDiagnosticsPanel`.
 
-**Scope**:
-- Lane-level evidence panel: separate evidence streams per dispatch lane in the Inspect tab
+**Why now**: The foundation is fully in place. The remaining surfaces are additive UI passes with no backend architectural risk.
+
+**Scope (remaining)**:
 - Dependency graph view: visual or structured representation of the dispatch graph for a run
 - Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Continuation lineage view: structured ancestry chain for resumed runs
 - Merge result explanation: per-lane contribution summary in the merged output
-- Verification evidence per branch / lane in evidence panel
-- Advanced operator UX: approval gate UI, lane control affordances, selective continuation controls
 - Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
 
-**Risk**: Medium — UI work with no backend architectural risk. Surface area is large but individual pieces are additive.
+**Risk**: Medium — UI work with no backend architectural risk. Individual pieces are additive.
 
 ---
 
@@ -83,19 +83,6 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 ---
 
-### 3. Product Polish (Strategic, Not Automatic)
-
-**What it is**: Additional improvements to the product experience.
-
-**When to prioritize**: Only when the above two areas are either complete or blocked. Product polish has a lower leverage ceiling than the infrastructure investments above.
-
-**Specific areas**:
-- Settings page: model selection, workspace configuration, verification thresholds, history management
-- Task history UX: search, filtering by status, bulk operations
-- Advanced action filtering in transcript (overlaps with direction #2 above)
-
----
-
 ## Out of Scope (Near Term)
 
 - `summaryEmitter` extraction — deferred, touches messages thread
@@ -107,21 +94,21 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 ## Recommended Sequence
 
-The Backend Closeout Pass (route extraction, test scaffolding) is complete. The backend is confirmed trusted. The Premium Workspace Orchestration Surface (Phase B) is the strategic top priority. Advanced Action Filtering (Phase A) is sequenced first only because it is low-risk, fast, and clears obvious user-facing friction before committing to the heavier UI pass. It does not displace premium orchestration as the highest-leverage direction. Phase C (Richer Checkpoint / Operator UX Polish) and Phase D (Environment / Runtime Lifecycle Depth) are now confirmed complete (P3 and P4 respectively) and are not part of the remaining sequence. Frontend work is the explicit next direction.
+The Backend Closeout Pass (route extraction, test scaffolding) is complete. The backend is confirmed trusted. Pass 4 (Premium Orchestration UI) is substantially complete — lane-level evidence, continuation lineage, approval gate UI, and provider diagnostics are all delivered. Pass 5 (Product Polish — settings, history UX, board kanban, prompt suggestions, integrations provider status) is fully complete. The remaining high-leverage directions are the residual orchestration surfaces (dependency graph, scheduler reasoning, replay at scale) and advanced action filtering in the transcript tab.
 
 ```
-Phase A: Advanced Action Filtering / Search
+Phase A: Advanced Action Filtering / Search (Transcript Tab)
   - Short, low-risk, no backend work
   - High user-facing value relative to effort
-  - Clears low-hanging friction before the heavier UI pass
+  - EvidencePanel already has filter chips + text search; this brings parity to Transcript tab
 
-Phase B: Premium Workspace Orchestration Surface  ← strategic top priority
-  - Medium-Heavy — UI pass exposing all four orchestration phases in the product
-  - Start with the highest-leverage sections: lane-level evidence panel,
-    dependency graph view, and continuation lineage view
-  - Approval gate UI and replay at orchestration scale can be sequenced after
+Phase B: Premium Workspace Orchestration Surface (Remaining)  ← strategic top priority
+  - Dependency graph view, scheduler reasoning surface, merge result explanation, replay at scale
+  - All underlying data is in place; this is a pure UI pass
+  - Start with dependency graph view as the highest-leverage visual
 
 (Phase C and Phase D are COMPLETE — closed as P3 and P4)
+(Pass 4 and Pass 5 are COMPLETE — see "What Is Now Closed" above)
 ```
 
 Each phase should be a single bounded engineering pass with an explicit exit condition.

@@ -1,6 +1,6 @@
 # Post-Orchestration Feature Roadmap for VenomGPT
 
-**Last updated**: April 2, 2026
+**Last updated**: April 6, 2026
 
 ---
 
@@ -70,7 +70,7 @@ The backend trust stack is approximately **97–98% toward serious Replit-style 
 - Full Replit product parity as a complete platform or ecosystem
 - Multi-user / multi-tenant (intentionally single-workspace, local-first)
 - A production SaaS deployment (single-server, local-first design)
-- Fully polished on product UX surfaces (premium operator UI, rich inspection at orchestration scale)
+- Fully polished on all remaining orchestration visualization surfaces (dependency graph view, scheduler reasoning, replay at orchestration scale — residual after Pass 4)
 
 ---
 
@@ -82,15 +82,16 @@ The core orchestration arc is closed. The next maturity arc is the product surfa
 
 **What**: Expose the full orchestration capability in the product — advanced operator UX, rich inspect surfaces, and replay at orchestration scale.
 
-**Scope**:
-- Lane-level evidence panel: separate evidence streams per dispatch lane in the Inspect tab
+**Delivered in Pass 4** (closed):
+- Lane-level evidence panel (`OrchestrationBlock` in Evidence Panel)
+- Continuation lineage view (ancestry chain with depth badges and origin checkpoint ID)
+- Approval gate UI (`ApprovalGateCard` with Approve all / Deny / Approve selective; `SelectivelyBlockedLaneGrid`)
+- Provider diagnostics panel (`ProviderDiagnosticsPanel` wired to `GET /provider-diagnostics`)
+
+**Remaining scope**:
 - Dependency graph view: visual or structured representation of the dispatch graph for a run
 - Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Continuation lineage view: structured ancestry chain for resumed runs
 - Merge result explanation: per-lane contribution summary in the merged output
-- Verification evidence per branch and per lane in evidence panel
-- Recovery explanation across branches in HITL affordances
-- Advanced operator UX: approval gate UI, lane control affordances, selective continuation controls
 - Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
 
 **Why now**: All four orchestration phases are complete. The underlying model is stable. Exposing surfaces before the model was stable would have created UI drift. Now the UI pass is both safe and high-leverage.

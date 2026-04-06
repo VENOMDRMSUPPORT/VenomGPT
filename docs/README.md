@@ -1,6 +1,6 @@
 # VenomGPT Documentation Pack
 
-**Last validated**: April 3, 2026 (post Tasks #1–#16 + HITL Recovery + Orchestration Roadmap Phases 1–4 + P3/P4 Closeout + Provider-Layer Stabilization Arc Tasks #18–#22 + Repo Cleanup + Backend Closeout Pass: agentContinuation.ts extraction, agent.ts 993 lines, 31 tests passing)
+**Last validated**: April 6, 2026 (post Tasks #1–#16 + HITL Recovery + Orchestration Roadmap Phases 1–4 + P3/P4 Closeout + Provider-Layer Stabilization Arc Tasks #18–#22 + Repo Cleanup + Backend Closeout Pass: agentContinuation.ts extraction, agent.ts 993 lines, 31 tests passing + Pass 4: Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel + Pass 5: Product Polish — settings toasts, task history search/filter chips, board status-change buttons + plan badges, live prompt suggestions, provider diagnostics panel on integrations page)
 
 ## What This Is
 
@@ -92,12 +92,24 @@ This judgment is **backend-wise only**. It is not a claim of parity with Replit 
   - Proactive stale-runtime detection: `isStaleAfterApply` in stored `TaskEvidence` (persisted, survives restart)
   - Runtime Lifecycle section in Evidence Panel (`RuntimeLifecycleBlock`) with honest absent-data degradation
   - Partially validated: task-start snapshot capture is fire-and-forget; in environments where port probe or `ps aux` fails, `taskStartRuntimeSnapshot` is absent and `isStaleAfterApply` remains `null` — honest absent-data handling confirmed; exhaustive failure-scenario coverage not tested
+- Premium Orchestration UI Surface (Pass 4)
+  - `OrchestrationBlock` in Evidence Panel: lane dispatch mode, lane count, per-lane status, failure isolation events
+  - Continuation lineage view in Evidence Panel: ancestry chain with depth badge and origin checkpoint ID
+  - `ApprovalGateCard` in TaskConsole: rendered when `livePhase.phase === "awaiting_approval"`; Approve all / Deny / Approve selective wired; `checkpointId` + `APPROVAL_CHECKPOINT` source
+  - `SelectivelyBlockedLaneGrid`: compact lane status grid shown when phase is `selectively_blocked`
+  - `ProviderDiagnosticsPanel` on settings and integrations pages: wired to `GET /provider-diagnostics`; shows provider name, model, lane config, startup warnings
+  - Runtime status bar confirmed wired to live `GET /runtime/status` data
+- Product Polish (Pass 5)
+  - Settings page: loads values from `GET /settings` on mount; saves via `PATCH /settings`; success/error toast feedback; "Reset to defaults" calls `POST /settings/reset` with confirmation; "Clear task history" calls `DELETE /settings/history` with confirmation
+  - Task history UX: search input filters tasks by prompt text (client-side); status filter chips (done, error, cancelled, interrupted) narrow the list; match count shown when filter is active; bulk-delete deferred (no per-task delete endpoint)
+  - Board kanban: status-change buttons wired via `updateBoardTaskStatus` (button-based, not drag-and-drop); plan association badges from `GET /board/plans` shown on each card
+  - Workspace composer prompt suggestions: up to 3 suggestions from `GET /board/prompts` appear as clickable chips when composer is idle
+  - Integrations page: `ProviderDiagnosticsPanel` replaces placeholder content; shows Z.A.I provider status, model, lanes, and connection health
 
 ### What Is Still Open
 
-- Premium workspace orchestration surface — expose the full orchestration capability in the product; lane-level evidence panel, dependency graph view, scheduler reasoning surface, continuation lineage view, approval gate UI, replay at orchestration scale
-- Advanced action filtering in transcript (filter by type, search by path/command text)
-- Product polish (settings page, task history UX)
+- Premium workspace orchestration surface (remaining surfaces) — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence and continuation lineage are now done in Pass 4
+- Advanced action filtering in transcript (filter by type, search by path/command text in transcript tab — EvidencePanel already has this)
 
 ### Provider / Runtime
 
@@ -118,9 +130,8 @@ This judgment is **backend-wise only**. It is not a claim of parity with Replit 
 
 ## Next Highest-Value Directions
 
-1. **Premium Workspace Orchestration Surface** — expose the full orchestration capability in the product; lane-level evidence panel, dependency graph view, scheduler reasoning surface, continuation lineage view, approval gate UI, and replay at orchestration scale; all four orchestration phases are complete and the model is stable
-2. **Advanced action filtering / search** — filter transcript by action type, search by file path or command; infrastructure is in place
-3. **Product polish** — settings page, task history UX (opportunistic)
+1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence panel, continuation lineage view, approval gate UI, and provider diagnostics are now done (Pass 4)
+2. **Advanced action filtering / search in transcript** — filter transcript tab by action type, search by file path or command; EvidencePanel (Inspect tab) already has this; transcript tab does not
 
 ---
 

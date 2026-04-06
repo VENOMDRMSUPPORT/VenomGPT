@@ -1,5 +1,7 @@
 # Pass 5: Product Polish — Settings, History & Board
 
+> **STATUS: COMPLETED** — All three sub-groups delivered and confirmed. Sub-group A: settings load/save/reset/history-clear with toast feedback. Sub-group B: task history search input, status filter chips, match count (bulk-delete disabled per Option C — no per-task delete endpoint). Sub-group C: board status-change buttons + plan association badges (`updateBoardTaskStatus` + `GET /board/plans`), live prompt suggestions (`GET /board/prompts`) in workspace composer, and ProviderDiagnosticsPanel on the integrations page. Pass closed April 2026.
+
 ## What & Why
 The backend has complete settings management, full task board APIs, and provider
 diagnostics. The frontend settings page and board view are partially wired but not

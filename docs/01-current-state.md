@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the confirmed current state of VenomGPT as of the closeout of Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing). It separates what is confirmed working, what is partially validated, what is still open, and what is intentionally deferred.
+This document describes the confirmed current state of VenomGPT as of the closeout of Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth — task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), Pass 4 (Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard with checkpointId + APPROVAL_CHECKPOINT source, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel), and Pass 5 (Product Polish — settings page toasts, task history search/filter chips + match count, board status-change buttons + plan association badges, live prompt suggestions, provider diagnostics on integrations page). It separates what is confirmed working, what is partially validated, what is still open, and what is intentionally deferred.
 
 ---
 
@@ -271,6 +271,21 @@ This document describes the confirmed current state of VenomGPT as of the closeo
 - `TaskEvidence.runtimeLifecycle` field: `TaskEvidenceRuntimeLifecycle` interface; persisted in `history.json` via `persistTaskNow()`; survives server restart
 - Runtime Lifecycle section in Evidence Panel (`RuntimeSnapshotRow` + `RuntimeLifecycleBlock`): renders task-start and post-apply snapshots, port diff, stale signal, and process linkage entries; uses purple accent (`border-l-purple-500/50`); honest absent-data degradation throughout
 
+**Premium Orchestration UI Surface (Pass 4)**
+- `OrchestrationBlock` component in Evidence Panel: renders lane dispatch mode (parallel / serial_fallback), lane count, per-lane status (success / failed / cancelled), and any failure isolation events from `TaskEvidence`
+- Continuation lineage view in Evidence Panel: renders the ancestry chain as a linear list with depth badge and origin checkpoint ID; pulls `ancestryDepth` and origin checkpoint ID from evidence replay endpoint
+- `ApprovalGateCard` in TaskConsole: rendered when `livePhase.phase === "awaiting_approval"`; three wired actions — Approve all, Deny, Approve selective (with lane selection); includes `checkpointId` field sourced from `APPROVAL_CHECKPOINT` event type
+- `SelectivelyBlockedLaneGrid`: compact lane status grid rendered when phase is `selectively_blocked`; lane state pulled from `live_phase` WebSocket events
+- `ProviderDiagnosticsPanel`: accessible from settings page and integrations page; wired to `GET /provider-diagnostics`; shows provider name, model, lane count, and any startup diagnostic warnings
+- Runtime status bar wired to live data from `GET /runtime/status` (confirmed, not re-implemented)
+
+**Product Polish (Pass 5)**
+- Settings page: loads current values from `GET /settings` on mount; saves via `PATCH /settings` with success/error toast feedback using `toast` from `@/hooks/use-toast`; "Reset to defaults" calls `POST /settings/reset` with confirmation dialog; "Clear task history" calls `DELETE /settings/history` with confirmation dialog
+- Task history UX: search input in history drawer filters tasks by prompt text (client-side); status filter chips (done, error, cancelled, interrupted) narrow the list; match count shown when filter is active; bulk-delete deferred (no per-task delete endpoint confirmed via settings route inspection — only full-history wipe available)
+- Board kanban: status-change buttons wired via `updateBoardTaskStatus` (button-based, no drag-and-drop); plan association badges shown on each board card pulled from `GET /board/plans`
+- Workspace composer prompt suggestions: up to 3 suggestions from `GET /board/prompts` appear as clickable chips when composer is idle and no task is active; clicking fills the composer input
+- Integrations page `ProviderDiagnosticsPanel`: replaces placeholder content; shows Z.A.I provider status, model, lanes, and connection health from `GET /provider-diagnostics`
+
 **WebSocket Streaming**
 - All agent events stream live via WebSocket
 - `status`, `thought`, `file_read`, `file_write`, `command`, `command_output`, `error`, `done` event types
@@ -296,9 +311,8 @@ This document describes the confirmed current state of VenomGPT as of the closeo
 
 | Area | Notes |
 |---|---|
-| Premium workspace orchestration surface | Highest-value next direction; expose full orchestration capability in product UI |
-| Advanced action filtering / search | No filtering UI in transcript; infrastructure exists in actionSelectors |
-| Product polish | Settings page, history UX |
+| Premium workspace orchestration surface (remaining) | Lane-level evidence, continuation lineage, approval gate UI, and provider diagnostics are now done (Pass 4); remaining: dependency graph view, scheduler reasoning surface, replay at orchestration scale |
+| Advanced action filtering / search in transcript | No filtering UI in transcript tab; infrastructure exists in actionSelectors; EvidencePanel (Inspect tab) already has filter chips and text search |
 
 ---
 

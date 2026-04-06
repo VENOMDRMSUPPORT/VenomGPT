@@ -341,9 +341,48 @@ The backend is **TRUSTED**. The closeout pass raised the automated verification 
 
 ---
 
+### Premium Orchestration UI Surface (Pass 4)
+
+With the backend trust stack complete and all four orchestration phases in place, Pass 4 delivered the orchestration surface into the product — transforming VenomGPT from "an agent with a transcript" into a genuine orchestration workspace.
+
+**OrchestrationBlock in Evidence Panel**
+A dedicated Orchestration section was added to `evidence-panel.tsx`, rendering lane dispatch mode (parallel / serial_fallback), lane count, per-lane status (success / failed / cancelled), and any failure isolation events from `TaskEvidence`. No new backend endpoints required — all data sourced from existing evidence structures.
+
+**Continuation lineage view**
+A continuation ancestry view was added to the Evidence Panel. It renders the ancestry chain as a linear list with depth badges and origin checkpoint ID, pulling `ancestryDepth` and origin checkpoint ID from the evidence replay endpoint.
+
+**ApprovalGateCard**
+When `livePhase.phase === "awaiting_approval"`, the TaskConsole renders an `ApprovalGateCard` with three wired actions: Approve all, Deny, and Approve selective (with lane selection). The card sources `checkpointId` from an `APPROVAL_CHECKPOINT` event type on the live WebSocket stream.
+
+**SelectivelyBlockedLaneGrid**
+A compact lane status grid was added to render when phase is `selectively_blocked`. Lane state is pulled from `live_phase` WebSocket events.
+
+**ProviderDiagnosticsPanel**
+A provider diagnostics panel was wired to `GET /provider-diagnostics`, accessible from both the settings page and the integrations page. It displays provider name, model, lane count, and any startup diagnostic warnings.
+
+**Runtime status wiring confirmed**
+The runtime status bar was confirmed to be wired to live `GET /runtime/status` data from Pass 1; no re-implementation was required.
+
+---
+
+### Product Polish (Pass 5)
+
+Pass 5 closed PP1 (Settings Page), PP2 (Task History UX), and the board/integrations product layer — all three sub-groups delivered and reviewed in sequence.
+
+**Sub-group A — Settings Page**
+Settings page was wired end-to-end: `GET /settings` loads current values on mount; `PATCH /settings` saves with success/error toast feedback via `toast` from `@/hooks/use-toast`; "Reset to defaults" calls `POST /settings/reset` with a confirmation dialog; "Clear task history" calls `DELETE /settings/history` with a confirmation dialog.
+
+**Sub-group B — Task History UX**
+The history drawer received a search input (client-side filter by prompt text), status filter chips (done, error, cancelled, interrupted), and a match count shown when any filter is active. Bulk-delete was assessed and deferred: the settings route only exposes a full-history wipe endpoint, not per-task deletion, so checkbox selection was not implemented (Option C).
+
+**Sub-group C — Board & Integrations**
+Board status-change buttons were wired via `updateBoardTaskStatus` (button-based; drag-and-drop explicitly out of scope). Plan association badges are pulled from `GET /board/plans` and shown on each board card. The workspace composer now shows up to 3 prompt suggestions from `GET /board/prompts` as clickable chips when idle. The integrations page received a `ProviderDiagnosticsPanel` replacing its placeholder content, showing Z.A.I provider status, model, lanes, and connection health from `GET /provider-diagnostics`.
+
+---
+
 ## Current Project Position
 
-VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), and a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`)**.
+VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`), a full premium orchestration UI surface (Pass 4), and a complete product polish layer (Pass 5)**.
 
 **Backend orchestration / execution trust / lifecycle maturity is very strong.**
 
@@ -353,12 +392,11 @@ The backend trust stack is approximately **97–98% toward serious Replit-style 
 
 This is not:
 - Full Replit parity as a complete product or platform
-- Full premium product / orchestration UI surface (the next maturity arc)
 - Full platform / ecosystem breadth
 
-The project is no longer in an early MVP state. It is no longer a fragile shell. The backend trust foundation is real and materially complete for the scope implemented. The full orchestration foundation — dispatch lanes, continuation chains, operator approval gates, verification-orchestrated execution — is all in place. The per-file checkpoint UX surface (P3) and runtime lifecycle depth (P4) are both confirmed complete. The provider layer has been reset to a clean Z.A.I-only baseline with a proper router/contract/driver architecture.
+The project is no longer in an early MVP state. It is no longer a fragile shell. The backend trust foundation is real and materially complete for the scope implemented. The full orchestration foundation — dispatch lanes, continuation chains, operator approval gates, verification-orchestrated execution — is all in place. The per-file checkpoint UX surface (P3) and runtime lifecycle depth (P4) are both confirmed complete. The provider layer has been reset to a clean Z.A.I-only baseline. The orchestration UI surface (Pass 4) and product polish layer (Pass 5) are both confirmed complete.
 
-**Frontend / Product experience** has improved substantially (transcript-first console, live action streaming, evidence/inspection panel, tool introspection, layout overhaul, per-file diff/apply/discard, Runtime Lifecycle section) and is in a strong position. Remaining open areas are incremental rather than foundational.
+**Frontend / Product experience** is in a strong, polished position: transcript-first console, live action streaming, evidence/inspection panel, tool introspection, layout overhaul, per-file diff/apply/discard, Runtime Lifecycle section, orchestration blocks, approval gate UI, settings wiring, history search/filter, board kanban, prompt suggestions, and provider diagnostics are all live. Remaining open areas are incremental.
 
 ---
 
@@ -371,13 +409,17 @@ The project is no longer in an early MVP state. It is no longer a fragile shell.
 | Richer checkpoint / operator UX (visual diff, per-file apply) | Per-file apply/discard routes, staging badges, checkpoint history, per-file diff view (P3) |
 | Environment / runtime lifecycle depth | RuntimeLifecycleRecord, task-start/post-apply snapshots, proactive stale detection, process linkage, Evidence Panel section (P4) |
 | Provider-layer stabilization arc | Z.A.I-only runtime, `providerRouter.ts` + `ZaiDriver.ts` active, Codex/OpenAI surfaces disconnected, Phase 3+ deferred (Tasks #18–#22) |
+| Premium workspace orchestration surface (Pass 4) | OrchestrationBlock, continuation lineage view, ApprovalGateCard (with checkpointId + APPROVAL_CHECKPOINT source), SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel, runtime status bar confirmed |
+| Settings page (PP1, Pass 5 Sub-group A) | Load/save/reset/clear wired with toast feedback |
+| Task history UX (PP2, Pass 5 Sub-group B) | Search input, status filter chips, match count; bulk-delete deferred (no per-task endpoint) |
+| Board kanban + prompt suggestions + integrations provider status (Pass 5 Sub-group C) | Status-change buttons, plan badges, prompt suggestions in composer, ProviderDiagnosticsPanel on integrations page |
 
 ### Still Open
 
 | Area | Status |
 |---|---|
-| Premium workspace orchestration surface | Open — highest-value next direction; exposes the complete orchestration capability in the product |
-| Advanced action filtering / search in UI | Open — infrastructure in place; filter UI not yet wired |
+| Premium workspace orchestration surface (remaining) | Partially done (Pass 4); remaining: dependency graph view, scheduler reasoning surface, replay at orchestration scale |
+| Advanced action filtering / search in transcript tab | Open — infrastructure in place; EvidencePanel has this; transcript tab does not |
 
 ### Intentionally Deferred (No Timeline)
 
@@ -396,6 +438,5 @@ The project is no longer in an early MVP state. It is no longer a fragile shell.
 
 ## Next Highest-Value Directions
 
-1. **Premium Workspace Orchestration Surface** — expose the full orchestration capability in the product; lane-level evidence panel, dependency graph view, scheduler reasoning surface, continuation lineage view, approval gate UI, and replay at orchestration scale; all four orchestration phases are now complete and the model is stable
-2. **Advanced action filtering / search** — filter transcript by action type, search by file path or command; the selector infrastructure already exists
-3. **Further product polish** — settings page, task history UX — only when strategically justified
+1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, and provider diagnostics are now done (Pass 4)
+2. **Advanced action filtering / search in transcript tab** — filter transcript tab by action type, search by file path or command; EvidencePanel (Inspect tab) already has this; transcript tab does not

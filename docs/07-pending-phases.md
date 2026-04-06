@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document lists pending and deferred work areas. Backend trust phases and UI surfaces that are effectively closed are not listed here as upcoming work. The list reflects the genuine current open areas after Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), not historical priorities.
+This document lists pending and deferred work areas. Backend trust phases and UI surfaces that are effectively closed are not listed here as upcoming work. The list reflects the genuine current open areas after Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing), Pass 4 (Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel), and Pass 5 (Product Polish — settings toasts, history search/filter, board status-change buttons, prompt suggestions, integrations provider diagnostics), not historical priorities.
 
 ---
 
@@ -44,30 +44,30 @@ The following areas were previously pending and are now done. They should not re
 - Runtime Lifecycle Depth (P4): `RuntimeLifecycleRecord`, `captureEnhancedSnapshot()`, `buildRuntimeLifecycleRecord()`; task-start/post-apply snapshots; proactive stale detection (`isStaleAfterApply`); process linkage; `TaskEvidence.runtimeLifecycle` persisted in `history.json`; Runtime Lifecycle section in Evidence Panel (`RuntimeLifecycleBlock`)
 - Provider-Layer Reset (Phases 0–2, Tasks #18–#22): damage assessment and freeze (Phase 0); `ProviderContract.ts`, `providerRouter.ts`, `ProviderStateStore.ts`, `ModelRegistry.ts` skeleton (Phase 1); `ZaiDriver.ts` implemented and wired, Z.AI execution through new router confirmed (Phase 2); Codex-specific state removed from `providerRegistry.ts`; `codexAuth.ts` unmounted; `modelAdapter.ts` retained as documented temporary shim; repo cleaned
 - Backend Closeout Pass: `routes/agentContinuation.ts` extracted from `agent.ts` (continuation/recovery routes — `recovery-options`, `retry-verify`, `continue-partial`, `recheck-runtime`); `agent.ts` reduced from 1905 lines to 993 lines; 31 automated tests added and passing (`src/tests/health.test.ts`, `responseNormalizer.test.ts`, `safety.test.ts`); TypeScript clean (0 errors) post-extraction
+- Premium Orchestration UI Surface (Pass 4): `OrchestrationBlock` (lane dispatch data in Evidence Panel), continuation lineage view, `ApprovalGateCard` (with `checkpointId` + `APPROVAL_CHECKPOINT` source, three wired approval actions), `SelectivelyBlockedLaneGrid` (compact lane status grid for `selectively_blocked` phase), `ProviderDiagnosticsPanel` (wired to `GET /provider-diagnostics`, accessible from settings and integrations pages), runtime status bar wired to `GET /runtime/status`
+- PP1 — Settings Page (Pass 5 Sub-group A): settings load from `GET /settings` on mount; save via `PATCH /settings` with success/error toast; "Reset to defaults" via `POST /settings/reset` with confirmation; "Clear task history" via `DELETE /settings/history` with confirmation
+- PP2 — Task History UX (Pass 5 Sub-group B): search input filters tasks by prompt text (client-side); status filter chips (done, error, cancelled, interrupted); match count when filter active; bulk-delete deferred (no per-task delete endpoint)
+- Board kanban + prompt suggestions + integrations provider status (Pass 5 Sub-group C): status-change buttons via `updateBoardTaskStatus` (no drag-and-drop); plan association badges from `GET /board/plans`; up to 3 prompt suggestions from `GET /board/prompts` as clickable chips in workspace composer; `ProviderDiagnosticsPanel` on integrations page
 
 ---
 
 ## Pending: Near-Term (Highest Leverage)
 
-### P1 — Premium Workspace Orchestration Surface
+### P1 — Premium Workspace Orchestration Surface (Remaining)
 
-**Status**: Open — highest-value next direction post-core-orchestration. All four orchestration phases are complete; the underlying model is stable and ready for a product surface pass.
+**Status**: Partially done. Pass 4 delivered: lane-level evidence panel, continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), and `ProviderDiagnosticsPanel`. Remaining scope below.
 
-**What**: Expose the full orchestration capability cleanly in the product — advanced operator UX, rich inspect surfaces, and replay at orchestration scale.
+**What**: Expose the remaining orchestration capability in the product.
 
-**Scope**:
-- Lane-level evidence panel: separate evidence streams per dispatch lane in the Inspect tab
+**Scope (remaining)**:
 - Dependency graph view: visual or structured representation of the dispatch graph for a run
 - Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Continuation lineage view: structured ancestry chain for resumed runs
 - Merge result explanation: per-lane contribution summary in the merged output
-- Verification evidence per branch / lane in evidence panel
-- Advanced operator UX: approval gate UI, lane control affordances, selective continuation controls
 - Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
 
-**Why**: The full orchestration foundation is in place. Exposing the model cleanly in the product is the highest-leverage remaining investment.
+**Why**: The foundation is in place and the model is stable. The remaining surfaces are additive UI work with no backend risk.
 
-**Risk**: Medium — UI work with no backend architectural risk. Individual pieces are additive.
+**Risk**: Medium — UI work, no backend architectural risk. Individual pieces are additive.
 
 ---
 
@@ -92,28 +92,13 @@ The following areas were previously pending and are now done. They should not re
 
 ## Pending: Product Polish (Opportunistic)
 
-These are real improvements but should not displace P1–P2 unless those areas are blocked.
-
-### PP1 — Settings Page
-
-A proper settings page covering:
-- Model selection (agentic model, vision model overrides)
-- Workspace configuration
-- Verification threshold settings
-- History management (clear, export)
-
-### PP2 — Task History UX
-
-Improvements to the history drawer:
-- Search and filter by status, date, prompt text
-- Bulk operations (delete, export)
-- Persistent history selection state
+PP1 (Settings Page) and PP2 (Task History UX) are **effectively closed** — delivered in Pass 5. See "Effectively Closed" section above.
 
 ### PP3 — Advanced Action Filtering (Transcript)
 
 Overlaps with P2 above. Listed here for completeness:
-- Filter by action type in transcript
-- Search by file path or command text
+- Filter by action type in transcript tab (EvidencePanel already has this)
+- Search by file path or command text in transcript tab
 - Collapse all / expand all
 
 ---
