@@ -76,7 +76,9 @@ In `apps.tsx`, replace the "Coming Soon" content with a live list fetched from
 `GET /projects` on mount. Render for each project the fields confirmed in
 Step A0. Show an explicit loading state while the fetch is in-flight. Show an
 explicit error state if the fetch fails (no silent failure, no empty-state
-fallback on error).
+fallback on error). Do not invent pagination, sorting, or client-side grouping
+unless the route response shape or existing design in `apps.tsx` explicitly
+requires it.
 
 ### Step A2 — Empty state
 
