@@ -94,6 +94,10 @@ editing.
 - After a successful select, the correct queries are invalidated so the file
   explorer immediately reflects the new workspace root — based on confirmed
   behavior from the verification step, not assumed
+- **No optimistic workspace switching state is invented**: the workspace root
+  displayed in the UI is not updated before the backend/store refresh path is
+  confirmed and applied; if the verified refresh path does not update the root
+  immediately, the UI waits for the next confirmed state — no guessing
 - The currently active project is visually highlighted (border accent, badge,
   or checkmark) using the active workspace root sourced from the mechanism
   confirmed in the verification step
