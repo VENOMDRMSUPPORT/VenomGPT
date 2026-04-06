@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ActionRecord } from '@/lib/actionSelectors';
+import { applyUnifiedDiff } from '@/lib/applyDiff';
 
 export type RunPhase =
   | "initializing"
@@ -38,6 +39,24 @@ export interface OpenFile {
   content: string;
   language: string;
   isDirty: boolean;
+}
+
+/** Shape stored in the global IDE state for the active file's staged diff. */
+export interface StagedFileInfo {
+  /** Task ID whose checkpoint produced this staged content. */
+  taskId: string;
+  /** Full reconstructed content of the staged file (diff applied to live content). */
+  stagedContent: string;
+  /** Number of OTHER tasks (beyond viewingTaskId) that also staged this file. */
+  otherTaskCount: number;
+}
+
+/** Internal shape for the checkpoint event data carried in agent log events. */
+interface CheckpointEventData {
+  taskId?: string;
+  status?: string;
+  staged?: boolean;
+  files?: Array<{ path: string; diff?: string; existed?: boolean }>;
 }
 
 export interface AgentLogEvent {
@@ -79,6 +98,18 @@ interface IdeState {
   // ── Editor ──────────────────────────────────────────────────────────────────
   openFiles: OpenFile[];
   activeFilePath: string | null;
+
+  // ── Staged diff (Pass 2) ─────────────────────────────────────────────────────
+  /**
+   * Staged diff info for the currently active file from the viewing task's
+   * checkpoint. null when no staged changes exist for this file.
+   */
+  stagedFileInfo: StagedFileInfo | null;
+  /**
+   * Set of all file paths that are staged across ANY loaded task checkpoint.
+   * Used to render staging badges in the file tabs.
+   */
+  stagedFilePaths: Set<string>;
 
   // ── Terminal ─────────────────────────────────────────────────────────────────
   terminalOutput: string[];
@@ -136,6 +167,19 @@ interface IdeState {
   updateFileContent: (path: string, newContent: string) => void;
   markFileClean: (path: string) => void;
 
+  // ── Staged diff actions (Pass 2) ─────────────────────────────────────────────
+  /**
+   * Derives and writes stagedFileInfo + stagedFilePaths into the store.
+   *
+   * Scans ALL loaded task checkpoint events in taskLogs, computes:
+   *  - stagedFilePaths: union of all staged paths across every task
+   *  - stagedFileInfo: diff-reconstructed content for the active file from the
+   *    viewing task, plus a count of other tasks that also staged the same file.
+   *
+   * Call this whenever activeFilePath, viewingTaskId, taskLogs, or openFiles change.
+   */
+  refreshStagedInfo: () => void;
+
   // ── Terminal actions ─────────────────────────────────────────────────────────
   appendTerminalOutput: (data: string) => void;
   clearTerminal: () => void;
@@ -183,9 +227,11 @@ let logIdCounter = 0;
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
 
-export const useIdeStore = create<IdeState>((set) => ({
+export const useIdeStore = create<IdeState>((set, get) => ({
   openFiles: [],
   activeFilePath: null,
+  stagedFileInfo: null,
+  stagedFilePaths: new Set(),
   terminalOutput: [],
   activeTaskId: null,
   viewingTaskId: null,
@@ -250,6 +296,55 @@ export const useIdeStore = create<IdeState>((set) => ({
       f.path === path ? { ...f, isDirty: false } : f
     ),
   })),
+
+  // ── Staged diff ───────────────────────────────────────────────────────────────
+
+  refreshStagedInfo: () => {
+    const { activeFilePath, viewingTaskId, taskLogs, openFiles } = get();
+
+    // 1. Scan ALL loaded task checkpoints to build the global staged path set
+    //    and count which tasks staged the active file.
+    const allStagedPaths = new Set<string>();
+    const taskIdsWithActiveFile: string[] = [];
+
+    for (const [taskId, logs] of Object.entries(taskLogs)) {
+      const cpLog = [...logs].reverse().find(l => l.type === 'checkpoint');
+      if (!cpLog?.data) continue;
+      const data = cpLog.data as unknown as CheckpointEventData;
+      if (!data.staged && data.status !== 'pending') continue;
+      for (const f of data.files ?? []) {
+        allStagedPaths.add(f.path);
+      }
+      if (activeFilePath && data.files?.some(f => f.path === activeFilePath)) {
+        taskIdsWithActiveFile.push(taskId);
+      }
+    }
+
+    // 2. Derive stagedFileInfo for the viewing task's active file.
+    let stagedFileInfo: StagedFileInfo | null = null;
+    if (activeFilePath && viewingTaskId) {
+      const logs = taskLogs[viewingTaskId] ?? [];
+      const cpLog = [...logs].reverse().find(l => l.type === 'checkpoint');
+      if (cpLog?.data) {
+        const data = cpLog.data as unknown as CheckpointEventData;
+        if (data.staged || data.status === 'pending') {
+          const fileEntry = data.files?.find(f => f.path === activeFilePath);
+          if (fileEntry?.diff) {
+            const liveContent = openFiles.find(f => f.path === activeFilePath)?.content ?? '';
+            const stagedContent = applyUnifiedDiff(liveContent, fileEntry.diff);
+            const otherTaskCount = taskIdsWithActiveFile.filter(id => id !== viewingTaskId).length;
+            stagedFileInfo = {
+              taskId: (data.taskId ?? viewingTaskId),
+              stagedContent,
+              otherTaskCount,
+            };
+          }
+        }
+      }
+    }
+
+    set({ stagedFileInfo, stagedFilePaths: allStagedPaths });
+  },
 
   // ── Terminal ─────────────────────────────────────────────────────────────────
 

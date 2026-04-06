@@ -1,33 +1,22 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Editor, { DiffEditor, useMonaco } from '@monaco-editor/react';
 import { useIdeStore } from '@/store/use-ide-store';
 import type { OpenFile } from '@/store/use-ide-store';
 import { FileCode2, ArrowLeftRight, Check, X, Loader2 } from 'lucide-react';
 import { useWriteFile } from '@workspace/api-client-react';
 import { toast } from '@/hooks/use-toast';
-import { applyUnifiedDiff } from '@/lib/applyDiff';
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
-
-interface StagedInfo {
-  taskId: string;
-  stagedContent: string;
-  otherTaskCount: number;
-}
-
-interface CheckpointEventData {
-  taskId?: string;
-  status?: string;
-  staged?: boolean;
-  liveUnchanged?: boolean;
-  files?: Array<{ path: string; diff?: string; existed?: boolean }>;
-}
 
 export function CodeEditor() {
   const { openFiles, activeFilePath, updateFileContent, markFileClean, openFile } = useIdeStore();
   const activeFile = openFiles.find(f => f.path === activeFilePath);
+
   const taskLogs = useIdeStore(s => s.taskLogs);
   const viewingTaskId = useIdeStore(s => s.viewingTaskId);
+  const stagedFileInfo = useIdeStore(s => s.stagedFileInfo);
+  const refreshStagedInfo = useIdeStore(s => s.refreshStagedInfo);
+
   const monaco = useMonaco();
   const { mutate: saveFile } = useWriteFile();
   const editorRef = useRef<unknown>(null);
@@ -58,27 +47,14 @@ export function CodeEditor() {
     }
   }, [monaco]);
 
-  const stagedInfo = useMemo<StagedInfo | null>(() => {
-    if (!activeFile || !viewingTaskId) return null;
-    if (dismissedFiles.has(activeFile.path)) return null;
+  useEffect(() => {
+    refreshStagedInfo();
+  }, [activeFilePath, viewingTaskId, taskLogs, openFiles, refreshStagedInfo]);
 
-    const logs = taskLogs[viewingTaskId] ?? [];
-    const checkpointLog = [...logs].reverse().find(l => l.type === 'checkpoint');
-    if (!checkpointLog?.data) return null;
-
-    const data = checkpointLog.data as unknown as CheckpointEventData;
-    if (!data.staged && data.status !== 'pending') return null;
-
-    const fileEntry = data.files?.find(f => f.path === activeFile.path);
-    if (!fileEntry || !fileEntry.diff) return null;
-
-    const stagedContent = applyUnifiedDiff(activeFile.content, fileEntry.diff);
-    return {
-      taskId: data.taskId ?? viewingTaskId,
-      stagedContent,
-      otherTaskCount: 0,
-    };
-  }, [taskLogs, viewingTaskId, activeFile, dismissedFiles]);
+  const effectiveStagedInfo =
+    stagedFileInfo && activeFile && !dismissedFiles.has(activeFile.path)
+      ? stagedFileInfo
+      : null;
 
   const handleSave = () => {
     const current = activeFileRef.current;
@@ -109,10 +85,10 @@ export function CodeEditor() {
   };
 
   const handleApplyFile = async () => {
-    if (!stagedInfo || !activeFile) return;
+    if (!effectiveStagedInfo || !activeFile) return;
     setApplyLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/agent/tasks/${stagedInfo.taskId}/apply-file`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${effectiveStagedInfo.taskId}/apply-file`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filePath: activeFile.path }),
@@ -128,6 +104,7 @@ export function CodeEditor() {
         openFile({ path: fileData.path, content: fileData.content, language: fileData.language, isDirty: false });
       }
       setDismissedFiles(prev => new Set([...prev, activeFile.path]));
+      refreshStagedInfo();
       toast({ title: 'File applied', description: `${activeFile.path.split('/').pop()} promoted to workspace` });
     } catch (e) {
       toast({ title: 'Apply failed', description: String(e), variant: 'destructive' });
@@ -137,10 +114,10 @@ export function CodeEditor() {
   };
 
   const handleDiscardFile = async () => {
-    if (!stagedInfo || !activeFile) return;
+    if (!effectiveStagedInfo || !activeFile) return;
     setDiscardLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/agent/tasks/${stagedInfo.taskId}/discard-file`, {
+      const res = await fetch(`${API_BASE}/api/agent/tasks/${effectiveStagedInfo.taskId}/discard-file`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filePath: activeFile.path }),
@@ -151,6 +128,7 @@ export function CodeEditor() {
         return;
       }
       setDismissedFiles(prev => new Set([...prev, activeFile.path]));
+      refreshStagedInfo();
       toast({ title: 'Changes discarded', description: `Staged changes for ${activeFile.path.split('/').pop()} removed` });
     } catch (e) {
       toast({ title: 'Discard failed', description: String(e), variant: 'destructive' });
@@ -171,7 +149,7 @@ export function CodeEditor() {
 
   return (
     <div className="ide-editor-area bg-background flex flex-col overflow-hidden">
-      {stagedInfo && (
+      {effectiveStagedInfo && (
         <>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/80 border-b border-panel-border shrink-0">
             <ArrowLeftRight className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -194,10 +172,10 @@ export function CodeEditor() {
               Apply
             </button>
           </div>
-          {stagedInfo.otherTaskCount > 0 && (
+          {effectiveStagedInfo.otherTaskCount > 0 && (
             <div className="px-3 py-1 bg-amber-900/20 border-b border-amber-700/30 shrink-0">
               <span className="text-xs text-amber-300">
-                {stagedInfo.otherTaskCount} other task{stagedInfo.otherTaskCount !== 1 ? 's' : ''} also staged changes to this file
+                {effectiveStagedInfo.otherTaskCount} other task{effectiveStagedInfo.otherTaskCount !== 1 ? 's' : ''} also staged changes to this file
               </span>
             </div>
           )}
@@ -205,13 +183,13 @@ export function CodeEditor() {
       )}
 
       <div className="flex-1 relative overflow-hidden">
-        {activeFile && stagedInfo ? (
+        {activeFile && effectiveStagedInfo ? (
           <DiffEditor
             height="100%"
             originalLanguage={activeFile.language || 'plaintext'}
             modifiedLanguage={activeFile.language || 'plaintext'}
             original={activeFile.content}
-            modified={stagedInfo.stagedContent}
+            modified={effectiveStagedInfo.stagedContent}
             theme="venomgpt-dark"
             options={{
               readOnly: true,
