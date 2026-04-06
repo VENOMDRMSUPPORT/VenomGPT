@@ -17,45 +17,131 @@ the file explorer, agent file tools, and staging layer operate against.
 This is the **largest remaining UI gap** in the product. Everything needed to
 close it exists in the backend — this is a pure frontend pass.
 
+**Drift risk**: this pass has 6 distinct surfaces that touch workspace root
+state, query invalidation, and store sync. To prevent scope creep and
+conflicting state assumptions, it is split into three **bounded sub-groups**.
+Each sub-group has its own done looks like and must be confirmed before the
+next starts.
+
 **No backend changes. No new backend routes.**
 
 ---
 
 ## Execution order within this pass
 
-| Step | Task | Why first |
-|------|------|-----------|
-| A | Projects list view | Foundation — everything else hangs off the list |
-| B | Create project flow | Most common action after viewing the list |
-| C | Workspace select button | Core functional value — switches active workspace |
-| D | Rename / description edit | Quality-of-life; depends on list being stable |
-| E | Delete with confirmation | Destructive — implement last, with guard |
-| F | Active workspace indicator | Visual polish; ties everything together |
+| Step | Sub-group | Why first |
+|------|-----------|-----------|
+| A | List + Create + empty/error/loading | Foundation — everything else hangs off the list |
+| B | Select + active indicator + workspace refresh | Core functional value — workspace switching |
+| C | Rename/edit + Delete with 409 handling | Quality-of-life; destructive action last |
 
 ---
 
-## Done looks like
+## Sub-group A — List, Create, Empty/Error/Loading States
 
-- Navigating to `/apps` shows a list of existing projects pulled from
-  `GET /projects`, each displaying the project name, optional description,
-  and creation date
-- A "New project" button opens an inline form; submitting calls `POST /projects`
-  with a name and optional description; the list refreshes on success
+**Scope**: read and create only. No workspace switching, no deletion, no editing.
+
+**Verification required before coding**: read `artifacts/api-server/src/routes/projects.ts`
+to confirm the exact shape of `POST /projects` request body (`name`, optional
+`description`) and the response shape. Do not assume — use the route file as
+the single source of truth for payload shapes.
+
+**Done looks like**:
+- Navigating to `/apps` shows a list of projects from `GET /projects`, each
+  displaying name, optional description, and creation date
+- Empty state renders a clear call-to-action when no projects exist
+- Loading state is shown while the fetch is in-flight
+- A "New project" button opens an inline form with a name field and optional
+  description field
+- Submitting calls `POST /projects` with the exact payload shape confirmed from
+  the route file
+- Success refreshes the list; the new project appears immediately
+- `invalid_name` error from the backend shows an inline validation message
+- `already_exists` error shows an inline conflict message
+- Network errors show an inline error (no silent failure)
+
+**Tasks**:
+1. **Projects list** — Replace the "Coming Soon" content in `apps.tsx` with a
+   live list fetched from `GET /projects` on mount. Render name, description,
+   and creation date for each card. Explicit loading and error states required.
+2. **Empty state** — When `GET /projects` returns an empty array, render an
+   empty state with a clear prompt to create the first project.
+3. **Create project** — Add a "New project" button that reveals an inline form.
+   On submit call `POST /projects`. Surface `invalid_name` and `already_exists`
+   errors inline. Refresh the list on success.
+
+---
+
+## Sub-group B — Workspace Select + Active Indicator + Refresh
+
+**Scope**: workspace switching and active state display only. No deletion, no
+editing.
+
+**Verification required before coding (two checks)**:
+1. Read `artifacts/workspace-ide/src/store/use-ide-store.ts` and
+   `artifacts/api-server/src/routes/workspace.ts` to confirm how the current
+   active workspace root is exposed to the frontend. Use the existing mechanism
+   — do not invent a new store field.
+2. Read `artifacts/api-server/src/routes/projects.ts` (`POST /projects/:name/select`
+   response shape) and the existing file-list query invalidation pattern in the
+   codebase (used after file create/delete in the file explorer) to confirm
+   exactly which queries must be invalidated after a workspace switch — file
+   list only, or workspace/session state too.
+
+**Done looks like**:
 - Each project card has a "Use this workspace" button that calls
-  `POST /projects/:name/select`; after selection the active workspace indicator
-  updates and the file explorer reflects the new root
-- Inline rename / description edit calls `PATCH /projects/:name`
-- Delete button (with a confirmation dialog) calls `DELETE /projects/:name`;
-  the currently active project cannot be deleted (the backend returns 409 —
-  the UI must respect this and show a clear message)
-- The currently active workspace is visually highlighted in the list (badge or
-  border accent)
-- Empty state renders correctly when no projects exist yet
-- All error states (name conflict, invalid name, network error) show inline
-  messages — no silent failures
-- TypeScript compiles clean after changes
+  `POST /projects/:name/select`
+- After a successful select, the correct queries are invalidated so the file
+  explorer immediately reflects the new workspace root — based on confirmed
+  behavior from the verification step, not assumed
+- The currently active project is visually highlighted (border accent, badge,
+  or checkmark) using the active workspace root sourced from the mechanism
+  confirmed in the verification step
+- No visual regression on projects that are not active
 
-## Out of scope
+**Tasks**:
+4. **Workspace select** — Add a "Use this workspace" button to each project card
+   that calls `POST /projects/:name/select`. After success, invalidate the
+   correct queries (confirmed via verification above).
+5. **Active workspace indicator** — Highlight the currently active project card
+   using the active workspace source confirmed in verification. Apply a visual
+   accent consistent with the existing design system.
+
+---
+
+## Sub-group C — Rename/Edit + Delete
+
+**Scope**: mutating operations on existing projects. Depends on Sub-group A
+being confirmed stable.
+
+**Verification required before coding**: read `artifacts/api-server/src/routes/projects.ts`
+(`PATCH /projects/:name` and `DELETE /projects/:name`) to confirm the exact
+patch payload shape and all error codes returned by delete (specifically: `409`
+for active project, `404` for not found, any others). Implement exactly what
+the endpoint documents — no invented error handling.
+
+**Done looks like**:
+- Each project card has an inline rename / description-edit affordance (pencil
+  icon or equivalent) that calls `PATCH /projects/:name` on confirm; edit is
+  in-place, no modal
+- A delete button (trash icon) on each card shows a confirmation dialog before
+  calling `DELETE /projects/:name`
+- If delete returns 409 (active project cannot be deleted), an inline message
+  explains why — no generic error
+- If delete returns 404, the list refreshes (project was already gone)
+- Successful rename / description update reflects immediately in the list
+
+**Tasks**:
+6. **Rename / description edit** — Add an inline edit affordance to each project
+   card. On confirm, call `PATCH /projects/:name` with the confirmed payload
+   shape. Reflect the updated values immediately.
+7. **Delete with confirmation** — Add a delete button. Show a confirmation dialog.
+   On confirm, call `DELETE /projects/:name`. Handle 409 (active project) with
+   a specific inline message. Refresh the list on success or 404.
+
+---
+
+## Global out of scope (entire Pass 7)
 
 - Drag-and-drop project reordering
 - Project-level settings or metadata beyond name and description
@@ -63,45 +149,11 @@ close it exists in the backend — this is a pure frontend pass.
 - Multi-workspace parallel views
 - Any backend changes
 
-## Tasks
-
-1. **Projects list** — Replace the "Coming Soon" content in `apps.tsx` with a
-   live list fetched from `GET /projects` on mount. Show name, description, and
-   creation date for each project. Show an empty state when the list is empty.
-   Handle loading and error states explicitly.
-
-2. **Create project** — Add a "New project" button that reveals an inline form
-   with a name field and an optional description field. On submit, call
-   `POST /projects`. Show validation errors inline (the backend returns
-   `invalid_name` and `already_exists` error codes — surface both clearly).
-   Refresh the list on success.
-
-3. **Workspace select** — Add a "Use this workspace" (or "Activate") button to
-   each project card that calls `POST /projects/:name/select`. Highlight the
-   currently active project visually. After selecting, invalidate the file list
-   query so the file explorer reflects the new workspace root immediately.
-
-4. **Rename / description edit** — Add an inline edit affordance (pencil icon or
-   double-click on name) that calls `PATCH /projects/:name` on confirm. Keep the
-   edit in-place — no modal.
-
-5. **Delete with confirmation** — Add a delete button (trash icon) to each
-   project card. Show a confirmation dialog before calling
-   `DELETE /projects/:name`. If the backend returns 409 (active project), show
-   an inline message explaining why deletion is blocked. Refresh the list on
-   success.
-
-6. **Active workspace indicator** — Show which project is currently active by
-   reading the active workspace root from the store or from the backend. Apply
-   a visual accent (border, badge, or checkmark) to the active card.
-   **Verification required before coding**: check `use-ide-store.ts` and the
-   `/api/workspace` route to confirm how the current workspace root is exposed
-   to the frontend. Use the existing mechanism — do not invent a new one.
-
 ## Relevant files
 
 - `artifacts/workspace-ide/src/pages/apps.tsx`
 - `artifacts/api-server/src/routes/projects.ts`
+- `artifacts/api-server/src/routes/workspace.ts`
 - `artifacts/workspace-ide/src/store/use-ide-store.ts`
 - `artifacts/workspace-ide/src/components/layout/page-layout.tsx`
 - `lib/api-client-react`
