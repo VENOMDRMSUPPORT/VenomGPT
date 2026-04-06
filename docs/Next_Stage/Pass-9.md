@@ -2,106 +2,139 @@
 
 > **STATUS: OPEN** — Last planned pass in the current orchestration arc.
 
+---
+
+## Confirmed data shapes (verified before writing this pass)
+
+**`DependencyAnalysis`** (frontend: `evidenceTypes.ts`, backend: `dependencyClassifier.ts`):
+```
+counts: Record<StepDependencyClass, number>          // aggregate class counts only
+potentiallyIndependentActionIds: string[]             // action UUIDs, not file paths
+serialReason: string                                  // single plain-language string, not per-step
+readBurstUsed?: boolean
+readBurstCount?: number
+```
+No per-step list. No per-step reasoning strings. One `serialReason` for the whole run.
+
+**`LaneSummary`** (frontend: `evidenceTypes.ts`):
+```
+laneId, stepId, filePath, status, durationMs, error, verificationOutcome, dependencyClass, stepCount
+```
+Per-lane, not per-step within a lane. No replay timing metadata.
+
+---
+
+## What is already done (do not re-implement)
+
+`DependencyGraphBlock` in `evidence-panel.tsx` currently renders:
+- **"Scheduler reasoning"** — `serialReason` string shown prominently ✅
+- **"Dependency class breakdown"** — `counts` table with per-class count and percentage ✅
+- **"Read-only (first-access) action IDs"** — collapsible list of `potentiallyIndependentActionIds`
+  as raw UUIDs (shown up to all, expandable via toggle) ✅
+
+`LaneEvidenceBlock` and `OrchestrationBlock` (extended in Pass 8) already render
+`laneEvidence` per-lane summaries with expand per lane. ✅
+
+---
+
 ## What & Why
 
-Pass 4 and Pass 8 together delivered the full orchestration evidence infrastructure
-and the per-lane contribution summary. The `DependencyGraphBlock` exists in the
-Evidence Panel and renders dependency class breakdowns. Three surfaces remain:
+### Sub-group A — Action ID → file path cross-reference (confirmed buildable today)
 
-1. **Dependency graph view** — A structured, human-readable view of the *inter-step*
-   dispatch graph for a parallel run: which steps were independent, which were
-   sequenced, and how the scheduler grouped them into lanes. `DependencyGraphBlock`
-   currently shows aggregate class counts (parallel/sequential/unknown). What is
-   missing is a per-step list view that shows, for each step, its dependency class,
-   its assigned lane, and whether it was the blocking step that caused a lane to
-   serialize. No D3, no canvas rendering — structured text/table view only, in line
-   with the rest of the Evidence Panel.
+**The gap**: `potentiallyIndependentActionIds` lists raw action UUIDs. A user reading
+the Evidence Panel cannot tell from a UUID which file or command each ID refers to.
+`ActionRecord[]` is already in scope in `evidence-panel.tsx` and carries `filePath`
+and `actionType` for each action. Cross-referencing the two arrays would replace
+opaque UUIDs with readable `filePath` + `actionType` pairs.
 
-2. **Scheduler reasoning surface** — The `dependencyAnalysis` field in `TaskEvidence`
-   carries per-step reasoning that is not yet surfaced. This sub-group exposes it:
-   for each step in the dispatch graph, show why the scheduler assigned its class
-   (the reasoning string from the analysis). This is additive to the dependency
-   graph view — both live inside `DependencyGraphBlock` or a sibling block.
+**Data sources confirmed in scope** (no new fetch needed):
+- `analysis.potentiallyIndependentActionIds: string[]` — the IDs to look up
+- `actions: ActionRecord[]` — already passed into the evidence panel; carries `id`,
+  `filePath`, `actionType`, `status`, `outcome`
 
-3. **Replay at orchestration scale** — Replay a parallel run's lane sequence, not
-   just a flat linear action list. The existing replay mechanism replays actions
-   sequentially; it has no concept of lanes or timing across lanes. This sub-group
-   requires a backend lane-timeline endpoint that does not currently exist.
-   **Sub-group C is the hardest item in this pass and may be split into a
-   separate backend-first pass if the endpoint surface proves large.**
+**Scope**:
+- Replace the raw UUID chip list in `DependencyGraphBlock` with a lookup against
+  `ActionRecord[]`: for each ID, find the matching action and show `actionType` +
+  `filePath` (truncated) + `status`
+- If an ID has no matching `ActionRecord` (older tasks, mismatched data), fall back
+  to showing the raw UUID — do not crash or hide the row
+- Collapsed by default (same toggle behavior as today)
+- No new fetch calls; no backend changes
+- `ActionRecord[]` availability in the component's prop chain must be verified before
+  coding — confirm the prop is already threaded into `DependencyGraphBlock` or
+  determine the minimal threading needed
 
----
-
-## Execution order within this pass
-
-| Step | Task | Notes |
-|------|------|-------|
-| A | Dependency graph step list view | Pure UI; data in `dependencyAnalysis` already |
-| B | Scheduler reasoning per step | Additive to A; same data source |
-| C | Replay at orchestration scale | Backend endpoint required first; assess before coding |
-
-Sub-groups A and B share the same data source and can be built in a single
-bounded pass. Sub-group C must be assessed independently — if the backend endpoint
-surface is non-trivial, open a dedicated backend spike before touching the frontend.
+**Risk**: Low — additive UI change, no backend dependencies.
 
 ---
 
-## Done looks like
+### Sub-group B — Replay at orchestration scale (backend-first prerequisite)
 
-**Sub-group A (Dependency graph step list view)**
-- Inside `DependencyGraphBlock` (or a sibling `DispatchGraphBlock`), each step in
-  the parallel dispatch graph is listed with: step index, dependency class
-  (`parallel` / `sequential` / `unknown`), assigned lane ID, and whether it was a
-  blocking step
-- The list is sorted by execution order, not by lane — reading top-to-bottom
-  reflects the scheduler's decision sequence
-- Only shown when `dependencyAnalysis` is non-null and contains at least one step
-- No new backend calls — data already in `TaskEvidence.executionSummary.dependencyAnalysis`
+**Status**: Not buildable as a frontend pass. Deferred until backend spike is complete.
 
-**Sub-group B (Scheduler reasoning per step)**
-- Each step row in the dispatch graph list is expandable; when expanded, shows the
-  reasoning string for why that step received its dependency class
-- If a step has no reasoning string (older tasks, fast-path), the expand affordance
-  is not shown for that row
-- No new backend calls
+**Why not now**:
+- `LaneSummary[]` exists but carries no replay timing sequence — it is a summary, not
+  a timeline. `durationMs` per lane is available, but there is no per-action timestamp
+  within each lane, no inter-lane wall-clock ordering, and no endpoint that exposes
+  lane-sequence data in replay-ready form.
+- No `GET /api/agent/tasks/:taskId/lane-timeline` (or equivalent) endpoint exists.
+- Writing a frontend replay controller before the data shape is defined would invent
+  a schema.
 
-**Sub-group C (Replay at orchestration scale)**
-- A lane-timeline replay view shows each lane's action sequence side-by-side (or
-  sequentially with lane labels) as replay progresses
-- A `GET /api/agent/tasks/:taskId/lane-timeline` (or equivalent) endpoint exists
-  and returns per-lane action sequences with timing metadata
-- The frontend replay controller drives the lane-timeline view, not the existing
-  flat action list
-- Replay can be paused, scrubbed, and reset — same controls as current replay
-- TypeScript compiles clean; no regressions in existing replay (flat action list)
-  for tasks that ran without parallel dispatch
+**Pre-conditions for a future backend spike**:
+1. Decide what "lane-timeline replay" means exactly: does it replay action events in
+   wall-clock order across lanes, or step by step per lane? Nail down the user story first.
+2. Check whether `ActionRecord[]` already carries enough timestamp data to reconstruct
+   a cross-lane timeline without a new endpoint.
+3. If a new endpoint is needed, design the response shape from confirmed stored data
+   (`history.json`, `laneEvidence`, `ActionRecord[]`) — do not invent fields.
+4. Only after the endpoint exists and the data shape is confirmed: open a new
+   frontend-only pass to build the replay UI.
+
+---
+
+## Execution order
+
+| Step | Task | Prerequisite | Type |
+|------|------|-------------|------|
+| A | Action ID → file path cross-reference in `DependencyGraphBlock` | None | Frontend only |
+| B | Replay at orchestration scale | Backend spike must complete first | Blocked |
+
+Sub-group A is the only item that can be implemented in this pass.
+Sub-group B is formally deferred to a future backend spike + frontend pass.
+
+---
+
+## Done looks like (Sub-group A only)
+
+- The collapsible section in `DependencyGraphBlock` labeled "Read-only (first-access)
+  action IDs" now shows, for each entry in `potentiallyIndependentActionIds`, the
+  matching `actionType` and `filePath` from `ActionRecord[]` instead of the raw UUID
+- If no matching `ActionRecord` is found for an ID, the UUID is shown as a fallback
+  (with a visual indicator that it is unresolved) — no crash, no hidden row
+- The expand/collapse toggle behavior is unchanged
+- `ActionRecord[]` is available in `DependencyGraphBlock` via props or via the nearest
+  confirmed parent that already holds the array — verify this before coding; do not
+  thread unnecessary props through layers that don't need them
+- TypeScript compiles clean after changes
+- No visual regressions elsewhere in the Evidence Panel
 
 ---
 
 ## Out of scope
 
-- Visual node-graph / D3 / canvas graph rendering
-- Editing or re-ordering steps from the UI
-- Drag-and-drop of lanes or steps
-- Any changes to the parallel dispatch logic or the scheduler itself
-- Multi-task cross-run comparison
-
----
-
-## Prerequisite check (before Sub-group C)
-
-Before writing any frontend code for Sub-group C, verify:
-1. Does a lane-timeline endpoint exist in `artifacts/api-server/src/routes/`? If not,
-   what data is needed and can it be derived from `history.json`?
-2. Is per-lane timing metadata stored anywhere in `TaskEvidence` or `ActionRecord`?
-3. If neither exists, open a backend spike pass first — do not invent data shapes.
+- Per-step dependency classification rows (data does not exist — `DependencyAnalysis`
+  has aggregate counts only, no per-step list)
+- Per-step scheduler reasoning strings (data does not exist — `serialReason` is a
+  single run-level string)
+- Visual node-graph / D3 / canvas rendering
+- Replay at orchestration scale (backend-first; see Sub-group B above)
+- Any backend changes in this pass
 
 ---
 
 ## Relevant files
 
-- `artifacts/workspace-ide/src/components/panels/evidence-panel.tsx` — `DependencyGraphBlock`, `OrchestrationBlock`
-- `artifacts/workspace-ide/src/lib/evidenceTypes.ts` — `TaskEvidence`, `ActionRecord`, `dependencyAnalysis` shape
-- `artifacts/workspace-ide/src/store/use-ide-store.ts` — replay state and controls
-- `artifacts/api-server/src/routes/` — where lane-timeline endpoint would live (Sub-group C)
-- `artifacts/api-server/src/data/history.json` — source of truth for persisted task evidence
+- `artifacts/workspace-ide/src/components/panels/evidence-panel.tsx` — `DependencyGraphBlock` (line 1357), prop threading to verify
+- `artifacts/workspace-ide/src/lib/evidenceTypes.ts` — `DependencyAnalysis`, `LaneSummary`, `ActionRecord`
+- `artifacts/api-server/src/lib/orchestrator/dependencyClassifier.ts` — backend `DependencyAnalysis` shape (reference only)
