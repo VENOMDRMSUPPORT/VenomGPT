@@ -1,6 +1,6 @@
 # Pass 8: Remaining Orchestration Surfaces
 
-> **STATUS: OPEN** — Not yet started.
+> **STATUS: CLOSED** — Completed and reviewer-approved.
 
 ## What & Why
 

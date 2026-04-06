@@ -78,6 +78,22 @@ The workspace-ide layout follows the Replit reference design with a single task 
 
 ## Development History — Completed Passes
 
+### Pass 6 — API Base URL Audit & Fetch Hardening (CLOSED)
+- Fixed 33 root-relative `fetch('/api/…')` calls across 12 frontend files
+- Pattern: `const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? ''` prefixed to all `/api/` paths
+- Files: `apps.tsx`, `evidence-panel.tsx`, `task-console.tsx`, `integrations.tsx`, `home-screen.tsx`, and 7 others
+
+### Pass 7 — Projects / Workspace Manager (CLOSED)
+- Replaced "Coming Soon" banner in `apps.tsx` with a full project management UI
+- **Sub-group A**: `useListProjects()` drives the project grid with loading, error, and empty states; `CreateProjectForm` with `useCreateProject()` and inline `invalid_name` / `already_exists` error mapping
+- **Sub-group B**: `useSelectProject()` with post-select invalidation of `getGetWorkspaceQueryKey()` + `getListFilesQueryKey()`; active indicator sourced from `useGetWorkspace()` → `data?.root` compared against `project.path` (no optimistic switching)
+- **Sub-group C**: Inline `DescriptionEditor` via raw `PATCH /api/projects/:name`; `DeleteDialog` modal with `409 active_project` user-readable message and `404`-as-success refresh
+- No backend changes; no drag-and-drop; no invented hooks
+
+### Pass 8 — Remaining Orchestration Surfaces (CLOSED)
+- **Task A**: `OrchestrationBlock` now accepts `actions?: ActionRecord[]`; per-lane expansion toggle (`expandedLanes` state + `toggleLane()`); WRITE_FILE and EXEC_COMMAND actions shown per lane, READ_FILE excluded; serial fallback lanes labeled "Serial"
+- **Task B**: `useTaskEvidence(viewingTaskId)` read directly in `TaskConsole`; `hasDependencyAnalysis` computed from `linkEvidenceData?.taskEvidence?.executionSummary?.dependencyAnalysis`; "View scheduling analysis →" deeplink shown in Transcript tab only when condition is true, clicking calls `setActiveTab('inspect')`
+
 ### Pass 4 — Premium Orchestration UI Surface (CLOSED)
 - `OrchestrationBlock` — visual surface for orchestration events
 - `ApprovalGateCard` — approval checkpoint UI with `checkpointId` wired to `PATCH /api/agent/runs/:id/approval` using authoritative `APPROVAL_CHECKPOINT` source
