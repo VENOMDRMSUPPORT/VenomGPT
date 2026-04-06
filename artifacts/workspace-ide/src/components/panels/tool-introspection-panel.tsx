@@ -152,13 +152,8 @@ export function ToolIntrospectionPanel({ actions, sideEffectsObserved, readBurst
   const tallies = useMemo(() => computeActionTallies(actions), [actions]);
   const shape   = useMemo(() => deriveExecutionShape(actions),  [actions]);
 
-  if (actions.length === 0) {
-    return (
-      <AbsentBlock message="No action records — tool introspection is unavailable for conversational or zero-action tasks." />
-    );
-  }
-
   // Merge commandClassFreq from tallies with sideEffectsObserved (dedup by class)
+  // Must be declared before any early returns to satisfy the Rules of Hooks.
   const mergedClassFreq = useMemo(() => {
     const freq: Record<string, number> = { ...tallies.commandClassFreq };
     if (sideEffectsObserved) {
@@ -170,6 +165,12 @@ export function ToolIntrospectionPanel({ actions, sideEffectsObserved, readBurst
     }
     return freq;
   }, [tallies.commandClassFreq, sideEffectsObserved]);
+
+  if (actions.length === 0) {
+    return (
+      <AbsentBlock message="No action records — tool introspection is unavailable for conversational or zero-action tasks." />
+    );
+  }
 
   const presentTypes = TYPE_ORDER.filter(t => tallies.typeStats[t] != null);
   const shapeStyle_  = shapeStyle(shape);
