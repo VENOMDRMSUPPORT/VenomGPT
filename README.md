@@ -198,7 +198,10 @@ API Server (Express, port 3001)
   │       └── sideEffectClassifier.ts → shell command side-effect classification
   └── routes/
       ├── agent.ts      → task CRUD, evidence, replay, actions, capabilities
-      └── checkpoint.ts → checkpoint status, apply, discard
+      ├── checkpoint.ts → checkpoint status, apply, discard
+      ├── workspace.ts  → GET/POST /api/workspace (active root)
+      ├── files.ts      → /api/files (list/read/write/delete)
+      └── projects.ts   → /api/projects (list, create, patch, delete, select)
 ```
 
 ### WebSocket
@@ -242,7 +245,8 @@ venomgpt/
 │   │           ├── workspace.ts      # GET/POST /api/workspace
 │   │           ├── files.ts          # /api/files (list/read/write/delete)
 │   │           ├── agent.ts          # Task CRUD, evidence, replay, actions, capabilities
-│   │           └── checkpoint.ts     # Checkpoint status, apply, discard
+│   │           ├── checkpoint.ts     # Checkpoint status, apply, discard
+│   │           └── projects.ts       # /api/projects — list, create, patch, delete, select
 │   └── workspace-ide/        # React + Vite IDE frontend
 │       ├── vite.config.ts    # Proxy config: /api → localhost:3001 (local only)
 │       └── src/
@@ -303,7 +307,6 @@ venomgpt/
 - **No interactive terminal**: The terminal panel shows command output but is not a PTY shell.
 - **No streaming action transport yet**: Actions are polled at 1750ms intervals. WebSocket-pushed action events are not yet implemented.
 - **No action-level replay UI**: The replay endpoint exists; a timeline UI surface has not been built yet.
-- **No multi-workspace support**: One workspace root per server instance.
 - **Windows bash requirement**: The agent's shell commands require Git Bash or WSL on Windows.
 - **Context window pruning**: For very long tasks, old messages are pruned. The system prompt and last 8 messages are always kept.
 
@@ -319,6 +322,7 @@ venomgpt/
 - Workspace directory picker with validation and Windows detection
 - Monaco editor: open, read, save files with syntax highlighting and Ctrl+S
 - Files edited by the agent automatically refresh in the editor if open
+- **Projects page** (`/apps`): live project list, create project (inline form with field-level error mapping), workspace select with active indicator, inline description edit, delete with 409 active-project guard
 
 **Transcript Console**
 - Transcript-first rendering with stage-aware thought items (PLANNING / INSPECTING / EDITING / VERIFYING / REPAIRING / WRAPPING UP colored badges)
@@ -326,6 +330,8 @@ venomgpt/
 - TaskSummaryCard: elapsed time, step count, changed files, checkpoint actions, action tallies
 - Action-aware transcript: grouped action rendering (ActionGroupRow), expandable per action type
 - Action polling during active runs (1750ms interval)
+- **OrchestrationBlock**: expandable per-lane contribution summary showing WRITE_FILE and EXEC_COMMAND actions; serial fallback lanes labeled "Serial"; READ_FILE excluded from summaries
+- **Scheduling analysis deeplink**: "View scheduling analysis →" link in Transcript tab navigates to Inspect tab when `dependencyAnalysis` evidence is present
 
 **Agent Loop**
 - Real multi-step execution: routing → planning → inspect → edit → verify → fix → summarize
