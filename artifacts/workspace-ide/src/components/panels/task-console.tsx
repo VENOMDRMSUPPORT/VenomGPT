@@ -1350,10 +1350,10 @@ function EmptyState() {
 
 type ApprovalAction = 'approve' | 'deny' | 'selective';
 
-function ApprovalGateCard({ taskId, livePhase, laneIds }: {
+function ApprovalGateCard({ taskId, livePhase, actions }: {
   taskId: string;
   livePhase: LivePhaseState;
-  laneIds: string[];
+  actions: ActionRecord[];
 }) {
   const [loading, setLoading] = useState<ApprovalAction | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1361,6 +1361,16 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
   const [denyNote, setDenyNote] = useState('');
   const [selectiveMode, setSelectiveMode] = useState(false);
   const [selectedLanes, setSelectedLanes] = useState<Set<string>>(new Set());
+
+  // Authoritative source: APPROVAL_CHECKPOINT action records carry checkpointId + laneIds
+  const approvalCheckpoints = actions.filter(a => a.type === 'APPROVAL_CHECKPOINT');
+  const approvalDecisions   = actions.filter(a => a.type === 'APPROVAL_DECISION');
+  const pendingGate = approvalCheckpoints.length > approvalDecisions.length
+    ? approvalCheckpoints[approvalCheckpoints.length - 1]
+    : null;
+  const pendingGateMeta = pendingGate?.meta as
+    { checkpointId: string; description?: string; laneIds?: string[] } | undefined;
+  const laneIds: string[] = pendingGateMeta?.laneIds ?? [];
 
   const callEndpoint = async (action: ApprovalAction, body: Record<string, unknown>) => {
     setLoading(action); setError(null);
@@ -1380,12 +1390,12 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
   };
 
   const handleApproveAll = () => {
-    callEndpoint('approve', {});
+    callEndpoint('approve', { checkpointId: pendingGateMeta?.checkpointId });
   };
 
   const handleDeny = () => {
     if (!denyMode) { setDenyMode(true); setSelectiveMode(false); return; }
-    callEndpoint('deny', { note: denyNote.trim() || undefined });
+    callEndpoint('deny', { checkpointId: pendingGateMeta?.checkpointId, note: denyNote.trim() || undefined });
   };
 
   const handleApproveSelective = () => {
@@ -1394,7 +1404,10 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
       if (laneIds.length > 0) setSelectedLanes(new Set(laneIds));
       return;
     }
-    callEndpoint('selective', { approvedLaneIds: [...selectedLanes] });
+    callEndpoint('selective', {
+      checkpointId: pendingGateMeta?.checkpointId,
+      approvedLaneIds: [...selectedLanes],
+    });
   };
 
   const toggleLane = (id: string) => {
@@ -1410,11 +1423,17 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-400/15 bg-blue-400/8">
         <Lock className="w-3.5 h-3.5 text-blue-400/70 shrink-0" />
         <span className="text-blue-200/90 font-semibold text-[11px]">Awaiting Approval</span>
+        {pendingGateMeta?.checkpointId && (
+          <span className="ml-auto font-mono text-[10px] text-blue-400/40">{pendingGateMeta.checkpointId}</span>
+        )}
       </div>
 
       <div className="px-3 py-2 space-y-2">
-        {livePhase.blockedContext && (
-          <p className="text-muted-foreground/60 text-[11px] leading-relaxed">{livePhase.blockedContext}</p>
+        {/* Gate description (from checkpoint meta) or blockedContext fallback */}
+        {(pendingGateMeta?.description || livePhase.blockedContext) && (
+          <p className="text-muted-foreground/60 text-[11px] leading-relaxed">
+            {pendingGateMeta?.description ?? livePhase.blockedContext}
+          </p>
         )}
 
         {error && (
@@ -1424,7 +1443,7 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
           </div>
         )}
 
-        {/* Deny input */}
+        {/* Deny note input */}
         {denyMode && (
           <div className="space-y-1.5">
             <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Denial note (optional)</span>
@@ -1438,7 +1457,7 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
           </div>
         )}
 
-        {/* Selective lane picker */}
+        {/* Selective lane picker — uses authoritative laneIds from checkpoint meta */}
         {selectiveMode && laneIds.length > 0 && (
           <div className="space-y-1.5">
             <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Approve lanes (checked = proceed)</span>
@@ -1458,7 +1477,7 @@ function ApprovalGateCard({ taskId, livePhase, laneIds }: {
           </div>
         )}
         {selectiveMode && laneIds.length === 0 && (
-          <div className="text-[11px] text-amber-400/60">Lane detail unavailable — use Approve all or Deny.</div>
+          <div className="text-[11px] text-amber-400/60">No lane scope declared for this gate — use Approve all or Deny.</div>
         )}
 
         {/* Action buttons */}
@@ -1754,16 +1773,6 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
     [currentActions]
   );
 
-  // Derive lane IDs from current actions for the ApprovalGateCard selective picker
-  const derivedLaneIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const a of currentActions) {
-      const laneId = (a as unknown as { laneId?: string }).laneId;
-      if (laneId) ids.add(laneId);
-    }
-    return [...ids].sort();
-  }, [currentActions]);
-
   // Detect if this task was conversational (no real work done)
   // Uses: route log category, step count, and action count
   const routeLog = useMemo(
@@ -1932,7 +1941,7 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
           <ApprovalGateCard
             taskId={viewingTaskId}
             livePhase={livePhase}
-            laneIds={derivedLaneIds}
+            actions={currentActions}
           />
         </div>
       )}
