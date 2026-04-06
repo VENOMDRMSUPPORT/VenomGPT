@@ -995,9 +995,12 @@ function RuntimeLifecycleBlock({ lifecycle }: { lifecycle: TaskEvidenceRuntimeLi
 interface OrchestrationBlockProps {
   lanes: LaneSummary[] | null | undefined;
   selectivelyBlockedLanes?: string[] | null;
+  actions?: ActionRecord[];
 }
 
-function OrchestrationBlock({ lanes, selectivelyBlockedLanes }: OrchestrationBlockProps) {
+function OrchestrationBlock({ lanes, selectivelyBlockedLanes, actions = [] }: OrchestrationBlockProps) {
+  const [expandedLanes, setExpandedLanes] = useState<Set<string>>(new Set());
+
   if (!lanes || lanes.length === 0) {
     return <AbsentBlock message="No parallel dispatch data for this task." />;
   }
@@ -1010,6 +1013,12 @@ function OrchestrationBlock({ lanes, selectivelyBlockedLanes }: OrchestrationBlo
   for (const lane of lanes) {
     if (!laneStatusMap.has(lane.laneId)) laneStatusMap.set(lane.laneId, lane);
   }
+
+  const toggleLane = (id: string) => setExpandedLanes(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   const DISPATCH_COLOR: Record<string, string> = {
     parallel:       'text-teal-300/80 bg-teal-400/10 border-teal-400/25',
@@ -1065,16 +1074,59 @@ function OrchestrationBlock({ lanes, selectivelyBlockedLanes }: OrchestrationBlo
               const lane = laneStatusMap.get(laneId)!;
               const dotColor = STATUS_DOT[lane.status] ?? 'bg-muted-foreground/30';
               const textColor = STATUS_TEXT[lane.status] ?? 'text-muted-foreground/50';
+              const isExpanded = expandedLanes.has(laneId);
+              const isSerial = dispatchMode === 'serial_fallback';
+              const contributions = isSerial
+                ? actions.filter(a => a.type === 'WRITE_FILE' || a.type === 'EXEC_COMMAND')
+                : actions.filter(a => a.laneId === laneId && (a.type === 'WRITE_FILE' || a.type === 'EXEC_COMMAND'));
               return (
-                <div key={laneId} className="grid grid-cols-3 px-2 py-1.5 items-center">
-                  <span className="font-mono text-cyan-200/70 text-[11px]">{laneId}</span>
-                  <span className={`flex items-center gap-1.5 ${textColor}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
-                    {lane.status}
-                  </span>
-                  <span className="text-red-400/60 text-[10px] truncate" title={lane.error ?? undefined}>
-                    {lane.error ? lane.error.slice(0, 40) : '—'}
-                  </span>
+                <div key={laneId}>
+                  <div
+                    className="grid grid-cols-3 px-2 py-1.5 items-center cursor-pointer hover:bg-cyan-400/5 transition-colors"
+                    onClick={() => toggleLane(laneId)}
+                  >
+                    <span className="font-mono text-cyan-200/70 text-[11px] flex items-center gap-1">
+                      {isExpanded
+                        ? <ChevronDown className="w-3 h-3 text-cyan-400/40 shrink-0" />
+                        : <ChevronRight className="w-3 h-3 text-cyan-400/40 shrink-0" />}
+                      {isSerial ? 'Serial' : laneId}
+                    </span>
+                    <span className={`flex items-center gap-1.5 ${textColor}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                      {lane.status}
+                    </span>
+                    <span className="text-red-400/60 text-[10px] truncate" title={lane.error ?? undefined}>
+                      {lane.error ? lane.error.slice(0, 40) : '—'}
+                    </span>
+                  </div>
+                  {isExpanded && (
+                    <div className="mx-2 mb-1.5 rounded border border-cyan-400/10 bg-black/20 overflow-hidden">
+                      {contributions.length === 0 ? (
+                        <p className="px-2 py-1.5 text-[10px] text-muted-foreground/40">No write or command contributions for this lane.</p>
+                      ) : (
+                        <div className="divide-y divide-cyan-400/8">
+                          {contributions.map(a => {
+                            const filePath = a.type === 'WRITE_FILE' ? (a.meta as { type: 'WRITE_FILE'; filePath: string }).filePath : null;
+                            const cmd = a.type === 'EXEC_COMMAND' ? (a.meta as { type: 'EXEC_COMMAND'; command: string }).command : null;
+                            const ok = a.outcome?.success ?? (a.status === 'completed');
+                            return (
+                              <div key={a.id} className="flex items-start gap-2 px-2 py-1">
+                                {a.type === 'WRITE_FILE'
+                                  ? <FileEdit className="w-3 h-3 shrink-0 mt-0.5 text-cyan-400/50" />
+                                  : <Terminal className="w-3 h-3 shrink-0 mt-0.5 text-amber-400/50" />}
+                                <span className={`font-mono text-[10px] truncate flex-1 ${ok ? 'text-muted-foreground/60' : 'text-red-400/60'}`}>
+                                  {filePath ?? cmd ?? '—'}
+                                </span>
+                                <span className={`text-[10px] shrink-0 ${ok ? 'text-green-400/50' : 'text-red-400/50'}`}>
+                                  {ok ? '✓' : '✗'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -2434,6 +2486,7 @@ export function EvidencePanel({ taskId, isLive }: EvidencePanelProps) {
           <OrchestrationBlock
             lanes={ev.executionSummary?.laneEvidence}
             selectivelyBlockedLanes={ev.executionSummary?.selectivelyBlockedLanes}
+            actions={actionsData?.actions ?? []}
           />
         </Section>
 

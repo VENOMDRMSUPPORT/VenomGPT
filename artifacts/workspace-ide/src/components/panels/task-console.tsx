@@ -11,6 +11,7 @@ import {
   Clock, FileCode, WifiOff, ScanSearch, Shield, RefreshCw,
   ChevronsDown, ChevronsUp, Lock, Network,
 } from 'lucide-react';
+import { useTaskEvidence } from '@/hooks/use-evidence';
 import { triggerRecheckRuntime } from '@/components/ui/runtime-status-bar';
 import { getVerifyQualityConfig } from '@/lib/verifyQuality';
 import { EvidencePanel } from '@/components/panels/evidence-panel';
@@ -1553,6 +1554,8 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
   const sidebarOpen    = useIdeStore(s => s.sidebarOpen);
   const activeTaskId   = useIdeStore(s => s.activeTaskId);
   const viewingTaskId  = useIdeStore(s => s.viewingTaskId);
+  const { data: linkEvidenceData } = useTaskEvidence(viewingTaskId);
+  const hasDependencyAnalysis = !!(linkEvidenceData?.taskEvidence?.executionSummary?.dependencyAnalysis);
   const childTasks     = useIdeStore(s => s.childTasks);
 
   const [activeTab, setActiveTab] = useState<ConsoleTab>('transcript');
@@ -2138,6 +2141,17 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
                 />
                 {executionSummary && (
                   <ExecutionSummaryMini data={executionSummary} />
+                )}
+                {hasDependencyAnalysis && activeTab === 'transcript' && (
+                  <div className="flex justify-end pt-1 px-1">
+                    <button
+                      onClick={() => setActiveTab('inspect')}
+                      className="flex items-center gap-1 text-[11px] text-violet-400/50 hover:text-violet-300/70 transition-colors"
+                    >
+                      View scheduling analysis
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
               </div>
             )}
