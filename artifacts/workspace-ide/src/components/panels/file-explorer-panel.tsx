@@ -8,6 +8,8 @@ import { useListFiles, FileEntry, getListFilesQueryKey } from '@workspace/api-cl
 import { useQueryClient } from '@tanstack/react-query';
 import { useIdeStore } from '@/store/use-ide-store';
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
 // ─── Inline confirmation dialog ───────────────────────────────────────────────
 // Replaces window.confirm for delete operations.
 
@@ -179,7 +181,7 @@ function ContextMenu({ menu, onClose, onRefresh, onCreateInDirectory, onError }:
   const handleDeleteConfirm = async () => {
     setPendingAction(null);
     try {
-      const res = await fetch(`/api/files/delete?path=${encodeURIComponent(entry.path)}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/files/delete?path=${encodeURIComponent(entry.path)}`, { method: 'DELETE' });
       if (res.ok) {
         onRefresh();
       } else {
@@ -197,7 +199,7 @@ function ContextMenu({ menu, onClose, onRefresh, onCreateInDirectory, onError }:
     const dir = entry.path.includes('/') ? entry.path.slice(0, entry.path.lastIndexOf('/') + 1) : '';
     const newPath = dir + newName;
     try {
-      const res = await fetch('/api/files/rename', {
+      const res = await fetch(`${API_BASE}/api/files/rename`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldPath: entry.path, newPath }),
@@ -230,7 +232,7 @@ function ContextMenu({ menu, onClose, onRefresh, onCreateInDirectory, onError }:
 
   const handleDownload = async () => {
     try {
-      const res = await fetch(`/api/files/download?path=${encodeURIComponent(entry.path)}`);
+      const res = await fetch(`${API_BASE}/api/files/download?path=${encodeURIComponent(entry.path)}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -354,9 +356,9 @@ function ExplorerTreeNode({ entry, depth, onContextMenu, searchQuery, forceOpen 
   const handleClick = async () => {
     if (isDir) { setOpen(o => !o); return; }
     try {
-      const res = await fetch(`/api/files/read?path=${encodeURIComponent(entry.path)}`);
+      const res = await fetch(`${API_BASE}/api/files/read?path=${encodeURIComponent(entry.path)}`);
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { path: string; content: string; language: string };
         openFile({ path: data.path, content: data.content, language: data.language, isDirty: false });
       }
     } catch { /* silent */ }
@@ -525,6 +527,36 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
 
   const [collapseKey, setCollapseKey] = useState(0);
 
+  // ── Drag-resize ────────────────────────────────────────────────────────────
+  const [explorerWidth, setExplorerWidth] = useState(EXPLORER_WIDTH);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startWidth: explorerWidth };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      // Panel is on the right — moving left increases width, moving right shrinks it.
+      const delta = dragRef.current.startX - ev.clientX;
+      const next = Math.max(160, Math.min(520, dragRef.current.startWidth + delta));
+      setExplorerWidth(next);
+    };
+
+    const onMouseUp = () => {
+      dragRef.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [explorerWidth]);
+
   // Header buttons create at workspace root (parentPath '').
   const handleNewFile = () => setInlinePrompt({ mode: 'file', parentPath: '' });
   const handleNewFolder = () => setInlinePrompt({ mode: 'folder', parentPath: '' });
@@ -542,7 +574,7 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
     const fullPath = prompt.parentPath ? `${prompt.parentPath}/${name}` : name;
     if (prompt.mode === 'file') {
       try {
-        const res = await fetch('/api/files/write', {
+        const res = await fetch(`${API_BASE}/api/files/write`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: fullPath, content: '' }),
@@ -558,7 +590,7 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
       }
     } else {
       try {
-        const res = await fetch('/api/files/mkdir', {
+        const res = await fetch(`${API_BASE}/api/files/mkdir`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: fullPath }),
@@ -598,10 +630,16 @@ export function FileExplorerPanel({ forceHidden = false }: FileExplorerPanelProp
   return (
     <div style={isHidden ? { display: 'none' } : { display: 'contents' }}>
       <div
-        className="h-full flex flex-col bg-panel border-l border-panel-border overflow-hidden"
-        style={{ width: EXPLORER_WIDTH, minWidth: EXPLORER_WIDTH, maxWidth: EXPLORER_WIDTH, flexShrink: 0 }}
+        className="h-full flex flex-col bg-panel border-l border-panel-border overflow-hidden relative"
+        style={{ width: explorerWidth, minWidth: explorerWidth, maxWidth: explorerWidth, flexShrink: 0 }}
         onContextMenu={e => e.preventDefault()}
       >
+        {/* Drag-resize handle — left edge of panel */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-primary/40 active:bg-primary/60 transition-colors"
+          onMouseDown={handleResizeMouseDown}
+          title="Drag to resize"
+        />
         {/* Header */}
         <div className="vg-panel-header-glow">
           <FolderOpen className="w-3.5 h-3.5 text-primary/50 relative z-10" />
