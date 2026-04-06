@@ -1,6 +1,6 @@
 # Pass 9: Residual Orchestration Surfaces
 
-> **STATUS: OPEN** — Last planned pass in the current orchestration arc.
+> **STATUS: CLOSED (Sub-group A)** — Sub-group A implemented and TypeScript-clean. Sub-group B (replay at scale) remains deferred pending backend spike.
 
 ---
 

@@ -1354,7 +1354,27 @@ function LaneEvidenceBlock({ lanes }: { lanes: LaneSummary[] | null | undefined 
 
 // ─── task-9: Dependency Graph & Scheduler Reasoning section ───────────────────
 
-function DependencyGraphBlock({ analysis }: { analysis: DependencyAnalysis | null | undefined }) {
+function depActionLabel(action: ActionRecord): { desc: string; path: string | null } {
+  const m = action.meta as { filePath?: string; command?: string };
+  if (action.type === 'READ_FILE' || action.type === 'WRITE_FILE') {
+    const full = m.filePath ?? '';
+    const parts = full.replace(/\\/g, '/').split('/');
+    return { desc: action.type === 'READ_FILE' ? 'Read' : 'Write', path: parts[parts.length - 1] || full };
+  }
+  if (action.type === 'EXEC_COMMAND') {
+    const cmd = m.command ?? '';
+    return { desc: 'Exec', path: cmd.length > 48 ? cmd.slice(0, 48) + '…' : cmd };
+  }
+  return { desc: action.type, path: null };
+}
+
+function DependencyGraphBlock({
+  analysis,
+  actions = [],
+}: {
+  analysis: DependencyAnalysis | null | undefined;
+  actions?: ActionRecord[];
+}) {
   if (!analysis) {
     return <AbsentBlock message="Dependency analysis not available for this task (older task or fast-path route)." />;
   }
@@ -1362,6 +1382,12 @@ function DependencyGraphBlock({ analysis }: { analysis: DependencyAnalysis | nul
   const [showIds, setShowIds] = useState(false);
   const classKeys = (Object.keys(analysis.counts) as StepDependencyClass[]).filter(k => analysis.counts[k] > 0);
   const totalRecords = Object.values(analysis.counts).reduce((s, n) => s + n, 0);
+
+  const actionMap = useMemo(() => {
+    const m = new Map<string, ActionRecord>();
+    for (const a of actions) m.set(a.id, a);
+    return m;
+  }, [actions]);
 
   return (
     <div className="space-y-2">
@@ -1401,7 +1427,7 @@ function DependencyGraphBlock({ analysis }: { analysis: DependencyAnalysis | nul
         </div>
       )}
 
-      {/* Potentially-independent action IDs — browseable */}
+      {/* Potentially-independent actions — cross-referenced with ActionRecord[] */}
       {analysis.potentiallyIndependentActionIds.length > 0 && (
         <div className="px-3 py-2 rounded border border-purple-400/15 bg-purple-400/5 text-[11px] space-y-1">
           <button
@@ -1413,19 +1439,39 @@ function DependencyGraphBlock({ analysis }: { analysis: DependencyAnalysis | nul
               : <ChevronRight className="w-3 h-3 shrink-0" />
             }
             <span className="text-[10px] font-semibold uppercase tracking-wider">
-              Read-only (first-access) action IDs
+              Parallelization candidates
             </span>
             <span className="ml-auto text-purple-400/40 text-[10px] tabular-nums">
               {analysis.potentiallyIndependentActionIds.length}
             </span>
           </button>
           {showIds && (
-            <div className="flex flex-wrap gap-1 pt-1">
-              {analysis.potentiallyIndependentActionIds.map((id, i) => (
-                <span key={i} className="font-mono text-[10px] px-1.5 py-0.5 rounded border border-purple-400/15 bg-purple-400/5 text-purple-300/60">
-                  {id}
-                </span>
-              ))}
+            <div className="pt-1 space-y-0.5">
+              {analysis.potentiallyIndependentActionIds.map((id, i) => {
+                const action = actionMap.get(id);
+                if (!action) {
+                  return (
+                    <div key={i} className="flex items-center gap-2 px-1.5 py-1 rounded opacity-40">
+                      <span className="font-mono text-[10px] text-purple-300/50 truncate">{id}</span>
+                      <span className="text-[9px] text-muted-foreground/30 shrink-0">unresolved</span>
+                    </div>
+                  );
+                }
+                const { desc, path } = depActionLabel(action);
+                const statusColor =
+                  action.status === 'completed' ? 'text-green-400/60' :
+                  action.status === 'failed'    ? 'text-red-400/60'   :
+                  'text-muted-foreground/40';
+                return (
+                  <div key={i} className="flex items-center gap-2 px-1.5 py-1 rounded border border-purple-400/10 bg-purple-400/5">
+                    <span className="text-[10px] text-purple-300/70 font-medium shrink-0 w-8">{desc}</span>
+                    {path && (
+                      <span className="font-mono text-[10px] text-purple-200/60 flex-1 truncate">{path}</span>
+                    )}
+                    <span className={`text-[9px] shrink-0 tabular-nums ${statusColor}`}>{action.status}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -2502,7 +2548,10 @@ export function EvidencePanel({ taskId, isLive }: EvidencePanelProps) {
 
         {/* (j) Dependency Graph & Scheduler Reasoning — violet left border */}
         <Section icon={GitBranch} title="Dependency Graph & Scheduler Reasoning" accentColor="border-l-violet-500/60">
-          <DependencyGraphBlock analysis={ev.executionSummary?.dependencyAnalysis ?? null} />
+          <DependencyGraphBlock
+            analysis={ev.executionSummary?.dependencyAnalysis ?? null}
+            actions={actionsData?.actions ?? []}
+          />
         </Section>
 
         {/* (k) Approval Workflow — blue left border */}
