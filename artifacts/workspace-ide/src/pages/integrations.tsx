@@ -1,10 +1,166 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Plug, Zap, CheckCircle2, AlertCircle, Info, AlertTriangle,
   RefreshCw, Loader2, ExternalLink, Settings2, Shield, Cpu, Eye,
+  Activity, Server,
 } from "lucide-react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// ─── Provider diagnostics types ─────────────────────────────────────────────
+
+interface LaneDiagResult {
+  lane: string;
+  model: string;
+  status: "ok" | "error";
+  httpStatus: number | null;
+  latencyMs: number;
+  errorMessage: string | null;
+}
+
+interface ProviderDiagnosticsResponse {
+  ok: boolean;
+  providerName: string;
+  keyConfigured: boolean;
+  results: LaneDiagResult[];
+}
+
+// ─── Provider diagnostics panel ─────────────────────────────────────────────
+
+function ProviderDiagnosticsPanel({ tm, refreshKey }: { tm: VGTheme; refreshKey: number }) {
+  const [data, setData]       = useState<ProviderDiagnosticsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  const fetchDiag = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${BASE}/api/provider-diagnostics`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setData(await res.json() as ProviderDiagnosticsResponse);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void fetchDiag(); }, [fetchDiag, refreshKey]);
+
+  const activeModel = data?.results?.[0]?.model ?? null;
+  const laneCount   = data?.results?.length ?? 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        borderRadius: 14,
+        background: tm.glassPanelBg,
+        border: `1px solid ${tm.glassPanelBorder}`,
+        backdropFilter: "blur(12px)",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${tm.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Activity style={{ width: 16, height: 16, color: tm.accent }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: tm.textPrimary }}>Provider Diagnostics</span>
+        </div>
+        {loading && <Loader2 style={{ width: 14, height: 14, color: tm.textDimmed, animation: "spin 1s linear infinite" }} />}
+        {!loading && data && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: data.ok ? "#22c55e" : "#ef4444" }}>
+            {data.ok
+              ? <CheckCircle2 style={{ width: 13, height: 13 }} />
+              : <AlertCircle style={{ width: 13, height: 13 }} />}
+            <span>{data.ok ? "All lanes healthy" : "Issues detected"}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {error && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#ef4444", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)", borderRadius: 8, padding: "8px 12px" }}>
+            <AlertTriangle style={{ width: 13, height: 13, flexShrink: 0 }} />
+            Diagnostics unavailable — {error}
+          </div>
+        )}
+
+        {data && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {/* Active provider */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 600, color: tm.textDimmed, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                <Server style={{ width: 11, height: 11 }} />
+                Active Provider
+              </div>
+              <span style={{ fontSize: 13, color: tm.textSecondary, fontWeight: 600 }}>{data.providerName}</span>
+            </div>
+
+            {/* Lane count */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 600, color: tm.textDimmed, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                <Cpu style={{ width: 11, height: 11 }} />
+                Lanes
+              </div>
+              <span style={{ fontSize: 13, color: tm.textSecondary, fontWeight: 600 }}>{laneCount} active</span>
+            </div>
+
+            {/* Active model */}
+            {activeModel && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 600, color: tm.textDimmed, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                  <Zap style={{ width: 11, height: 11 }} />
+                  Active Model
+                </div>
+                <code style={{ fontSize: 11, color: tm.textSecondary, background: tm.accentBg, padding: "2px 7px", borderRadius: 5 }}>{activeModel}</code>
+              </div>
+            )}
+
+            {/* Connection health */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 600, color: tm.textDimmed, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                <Eye style={{ width: 11, height: 11 }} />
+                Connection Health
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: data.ok ? "#22c55e" : "#ef4444" }}>
+                {data.ok ? "Confirmed" : "Degraded"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Per-lane results */}
+        {data && data.results.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
+            {data.results.map(lane => (
+              <div
+                key={lane.lane}
+                style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: tm.textMuted, background: tm.accentBg, border: `1px solid ${tm.border}`, borderRadius: 7, padding: "6px 10px" }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: lane.status === "ok" ? "#22c55e" : "#ef4444", flexShrink: 0 }} />
+                <span style={{ fontWeight: 600, color: tm.textSecondary, minWidth: 64 }}>{lane.lane}</span>
+                <code style={{ fontSize: 10, background: "transparent", color: tm.textDimmed }}>{lane.model}</code>
+                <span style={{ marginLeft: "auto", fontSize: 10, color: tm.textDimmed }}>{lane.latencyMs}ms</span>
+                {lane.errorMessage && (
+                  <span style={{ fontSize: 10, color: "#ef4444", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={lane.errorMessage}>
+                    {lane.errorMessage}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
 import { type VGTheme } from "@/lib/theme";
 import { useTheme } from "@/lib/theme-context";
 import PageLayout from "@/components/layout/page-layout";
@@ -226,8 +382,14 @@ export default function IntegrationsPage() {
   const [, navigate] = useLocation();
   const { data: providersData, isLoading, isError, refetch } = useGetProviders();
   const providers = providersData?.providers;
-  const [refreshHovered, setRefreshHovered] = useState(false);
+  const [refreshHovered, setRefreshHovered]   = useState(false);
   const [settingsHovered, setSettingsHovered] = useState(false);
+  const [diagRefreshKey, setDiagRefreshKey]   = useState(0);
+
+  const handleRefresh = () => {
+    void refetch();
+    setDiagRefreshKey(k => k + 1);
+  };
 
   return (
     <PageLayout
@@ -244,7 +406,7 @@ export default function IntegrationsPage() {
       headerRight={
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
-            onClick={() => void refetch()}
+            onClick={handleRefresh}
             onMouseEnter={() => setRefreshHovered(true)}
             onMouseLeave={() => setRefreshHovered(false)}
             title="Refresh"
@@ -295,6 +457,9 @@ export default function IntegrationsPage() {
         {!isLoading && providers && providers.map((p) => (
           <ProviderCard key={p.id} tm={tm} provider={p} />
         ))}
+
+        {/* Provider diagnostics panel — live lane-level health from GET /api/provider-diagnostics */}
+        <ProviderDiagnosticsPanel tm={tm} refreshKey={diagRefreshKey} />
 
         {/* Footer note */}
         {!isLoading && (

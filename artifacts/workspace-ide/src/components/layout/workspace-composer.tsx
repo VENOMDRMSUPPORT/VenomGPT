@@ -9,15 +9,9 @@ import { useOptimizePrompt } from '@/hooks/use-optimize-prompt';
 
 const MAX_IMAGES = 5;
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+const MAX_PROMPT_CHIPS = 3;
 
-const SUGGESTED_PROMPTS = [
-  'Fix a bug',
-  'Add a feature',
-  'Write tests',
-  'Refactor this',
-  'Explain code',
-  'Review changes',
-];
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
 
 export function WorkspaceComposer() {
   const queryClient = useQueryClient();
@@ -37,6 +31,27 @@ export function WorkspaceComposer() {
   const [submitError, setSubmitError]     = useState<string | null>(null);
   const [isFocused, setIsFocused]         = useState(false);
   const [planMode, setPlanMode]           = useState(false);
+  const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
+
+  // Fetch board prompts when idle (no active task) to populate suggestion chips
+  useEffect(() => {
+    if (activeTaskId !== null) return;
+    let cancelled = false;
+    async function fetchSuggestions() {
+      try {
+        const res = await fetch(`${API_BASE}/api/board/prompts`);
+        if (!res.ok || cancelled) return;
+        const body = await res.json() as { prompts: { index: number; prompt: string }[] };
+        const unique = Array.from(
+          new Map((body.prompts ?? []).map(p => [p.prompt.slice(0, 80), p.prompt])).values()
+        );
+        if (!cancelled) setPromptSuggestions(unique.slice(-MAX_PROMPT_CHIPS).reverse());
+      } catch { }
+    }
+    void fetchSuggestions();
+    return () => { cancelled = true; };
+  }, [activeTaskId]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingPromptRef = useRef<string>('');
 
@@ -288,18 +303,19 @@ export function WorkspaceComposer() {
             </div>
           )}
 
-          {/* Suggested prompts — hidden when task is running */}
-          {!isRunning ? (
+          {/* Suggested prompts — shown when idle and input is empty, fetched from /board/prompts */}
+          {!isRunning && !prompt.trim() && promptSuggestions.length > 0 ? (
             <>
               <div className="h-px mx-3 bg-white/8" />
               <div className="flex flex-wrap gap-1.5 px-3 py-2">
-                {SUGGESTED_PROMPTS.map((text) => (
+                {promptSuggestions.map((text) => (
                   <button
                     key={text}
                     type="button"
                     onClick={() => handleSuggestedPrompt(text)}
                     disabled={disabled}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-muted-foreground/70 border border-white/8 bg-white/4 hover:bg-white/10 hover:text-foreground hover:border-white/15 transition-all duration-100 disabled:opacity-30"
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-muted-foreground/70 border border-white/8 bg-white/4 hover:bg-white/10 hover:text-foreground hover:border-white/15 transition-all duration-100 disabled:opacity-30 max-w-[180px] truncate"
+                    title={text}
                   >
                     {text}
                   </button>

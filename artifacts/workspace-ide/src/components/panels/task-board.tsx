@@ -1,14 +1,39 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useIdeStore, type ChildTask } from '@/store/use-ide-store';
 import {
   Loader2, CheckCircle2, Archive, AlertCircle,
   Sparkles, X, ListChecks,
   Inbox, Play, Search, Plus, Send,
-  ChevronRight, ChevronDown,
+  ChevronRight, ChevronDown, FileText,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 import type { BoardTaskStatus } from '@/store/use-ide-store';
+
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
+// Plan artifact shape from GET /api/board/plans
+interface PlanArtifact {
+  index: number;
+  agentTaskId: string;
+  boardTaskId?: string;
+  savedAt: string;
+  plan: { goal: string; approach: string };
+}
+
+// Contextual status transitions per current status (not drag-and-drop)
+const STATUS_TRANSITIONS: Partial<Record<BoardTaskStatus, { label: string; target: BoardTaskStatus }[]>> = {
+  error:       [{ label: 'Retry',    target: 'pending'  }, { label: 'Archive', target: 'archived'  }],
+  interrupted: [{ label: 'Retry',    target: 'pending'  }, { label: 'Archive', target: 'archived'  }],
+  partial:     [{ label: 'Retry',    target: 'pending'  }, { label: 'Archive', target: 'archived'  }],
+  stalled:     [{ label: 'Archive',  target: 'archived' }],
+  blocked:     [{ label: 'Archive',  target: 'archived' }],
+  done:        [{ label: 'Archive',  target: 'archived' }],
+  archived:    [{ label: 'Restore',  target: 'pending'  }],
+  cancelled:   [{ label: 'Restore',  target: 'pending'  }],
+  draft:       [{ label: 'Cancel',   target: 'cancelled'}],
+  pending:     [{ label: 'Cancel',   target: 'cancelled'}],
+};
 
 // ─── Status column config ─────────────────────────────────────────────────────
 
@@ -132,16 +157,22 @@ const CARD_STATUS_LABEL: Record<BoardTaskStatus, string> = {
 interface TaskCardProps {
   task: ChildTask;
   isSelected: boolean;
+  planGoal: string | null;
   onSelect: (task: ChildTask) => void;
   onDelete: (taskId: string, e: React.MouseEvent) => void;
+  onStatusChange: (taskId: string, status: BoardTaskStatus, e: React.MouseEvent) => void;
+  changingStatus: string | null;
   deletingId: string | null;
   dimmed?: boolean;
 }
 
-function TaskCard({ task, isSelected, onSelect, onDelete, deletingId, dimmed }: TaskCardProps) {
+function TaskCard({ task, isSelected, planGoal, onSelect, onDelete, onStatusChange, changingStatus, deletingId, dimmed }: TaskCardProps) {
   const dotColor = CARD_STATUS_DOT[task.status] ?? 'bg-muted-foreground/30';
   const statusLabel = CARD_STATUS_LABEL[task.status] ?? task.status;
   const isActive = task.status === 'running' || task.status === 'stalled' || task.status === 'blocked';
+  const transitions = STATUS_TRANSITIONS[task.status] ?? [];
+  const isChanging = changingStatus === task.id;
+
   return (
     <div
       onClick={() => onSelect(task)}
@@ -178,9 +209,37 @@ function TaskCard({ task, isSelected, onSelect, onDelete, deletingId, dimmed }: 
       <p className="text-[11px] text-foreground/80 leading-snug line-clamp-3 mb-1.5" title={task.prompt}>
         {task.name || task.prompt}
       </p>
-      <p className="text-[9px] text-muted-foreground/30 leading-none">
+
+      {/* Plan association badge */}
+      {planGoal && (
+        <div className="flex items-center gap-1 mb-1.5 text-[10px] text-primary/50 truncate" title={planGoal}>
+          <FileText className="w-2.5 h-2.5 shrink-0" />
+          <span className="truncate">{planGoal}</span>
+        </div>
+      )}
+
+      <p className="text-[9px] text-muted-foreground/30 leading-none mb-1.5">
         {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}
       </p>
+
+      {/* Status-change action buttons (shown when not running) */}
+      {transitions.length > 0 && (
+        <div
+          className="flex flex-wrap gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={e => e.stopPropagation()}
+        >
+          {transitions.map(({ label, target }) => (
+            <button
+              key={target}
+              onClick={(e) => onStatusChange(task.id, target, e)}
+              disabled={isChanging}
+              className="text-[9px] px-1.5 py-0.5 rounded border border-panel-border/50 text-muted-foreground/50 hover:text-foreground/80 hover:border-panel-border/80 hover:bg-background/60 disabled:opacity-40 transition-all"
+            >
+              {isChanging ? <Loader2 className="w-2 h-2 animate-spin inline" /> : label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -191,12 +250,15 @@ interface KanbanColumnProps {
   col: ColumnConfig;
   tasks: ChildTask[];
   activeBoardTaskId: string | null;
+  plansByBoardTaskId: Map<string, string>;
   onSelect: (task: ChildTask) => void;
   onDelete: (taskId: string, e: React.MouseEvent) => void;
+  onStatusChange: (taskId: string, status: BoardTaskStatus, e: React.MouseEvent) => void;
+  changingStatus: string | null;
   deletingId: string | null;
 }
 
-function KanbanColumn({ col, tasks, activeBoardTaskId, onSelect, onDelete, deletingId }: KanbanColumnProps) {
+function KanbanColumn({ col, tasks, activeBoardTaskId, plansByBoardTaskId, onSelect, onDelete, onStatusChange, changingStatus, deletingId }: KanbanColumnProps) {
   const [collapsed, setCollapsed] = useState(col.dimmed);
 
   return (
@@ -236,8 +298,11 @@ function KanbanColumn({ col, tasks, activeBoardTaskId, onSelect, onDelete, delet
                 key={task.id}
                 task={task}
                 isSelected={activeBoardTaskId === task.id}
+                planGoal={plansByBoardTaskId.get(task.id) ?? null}
                 onSelect={onSelect}
                 onDelete={onDelete}
+                onStatusChange={onStatusChange}
+                changingStatus={changingStatus}
                 deletingId={deletingId}
                 dimmed={col.dimmed}
               />
@@ -299,18 +364,40 @@ function BoardComposer() {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TaskBoard() {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId]       = useState<string | null>(null);
+  const [changingStatus, setChangingStatus] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery]     = useState('');
+  const [plansByBoardTaskId, setPlansByBoardTaskId] = useState<Map<string, string>>(new Map());
 
-  const activeBoardTaskId    = useIdeStore(s => s.activeBoardTaskId);
-  const setActiveBoardTaskId = useIdeStore(s => s.setActiveBoardTaskId);
-  const setMainView          = useIdeStore(s => s.setMainView);
-  const setViewingTask       = useIdeStore(s => s.setViewingTask);
-  const hydrateTaskEvents    = useIdeStore(s => s.hydrateTaskEvents);
-  const taskLogsLoaded       = useIdeStore(s => s.taskLogsLoaded);
-  const childTasks           = useIdeStore(s => s.childTasks);
-  const boardLoading         = useIdeStore(s => s.boardLoading);
-  const deleteBoardTask      = useIdeStore(s => s.deleteBoardTask);
+  const activeBoardTaskId      = useIdeStore(s => s.activeBoardTaskId);
+  const setActiveBoardTaskId   = useIdeStore(s => s.setActiveBoardTaskId);
+  const setMainView            = useIdeStore(s => s.setMainView);
+  const setViewingTask         = useIdeStore(s => s.setViewingTask);
+  const hydrateTaskEvents      = useIdeStore(s => s.hydrateTaskEvents);
+  const taskLogsLoaded         = useIdeStore(s => s.taskLogsLoaded);
+  const childTasks             = useIdeStore(s => s.childTasks);
+  const boardLoading           = useIdeStore(s => s.boardLoading);
+  const deleteBoardTask        = useIdeStore(s => s.deleteBoardTask);
+  const updateBoardTaskStatus  = useIdeStore(s => s.updateBoardTaskStatus);
+
+  // Fetch plan associations on mount (GET /api/board/plans)
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const res = await fetch(`${API_BASE}/api/board/plans`);
+        if (!res.ok) return;
+        const body = await res.json() as { plans: PlanArtifact[] };
+        const map = new Map<string, string>();
+        for (const p of body.plans) {
+          if (p.boardTaskId && p.plan.goal && !map.has(p.boardTaskId)) {
+            map.set(p.boardTaskId, p.plan.goal);
+          }
+        }
+        setPlansByBoardTaskId(map);
+      } catch { }
+    }
+    void fetchPlans();
+  }, []);
 
   // ── Task selection — navigate back to editor and open task in Task Console ─
 
@@ -346,6 +433,16 @@ export function TaskBoard() {
       setDeletingId(null);
     }
   }, [activeBoardTaskId, setActiveBoardTaskId, deleteBoardTask]);
+
+  const handleStatusChange = useCallback(async (taskId: string, status: BoardTaskStatus, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChangingStatus(taskId);
+    try {
+      await updateBoardTaskStatus(taskId, status);
+    } catch { } finally {
+      setChangingStatus(null);
+    }
+  }, [updateBoardTaskStatus]);
 
   // ── Filtered tasks ─────────────────────────────────────────────────────────
 
@@ -431,8 +528,11 @@ export function TaskBoard() {
                   col={col}
                   tasks={colTasks}
                   activeBoardTaskId={activeBoardTaskId}
+                  plansByBoardTaskId={plansByBoardTaskId}
                   onSelect={handleSelect}
                   onDelete={handleDelete}
+                  onStatusChange={handleStatusChange}
+                  changingStatus={changingStatus}
                   deletingId={deletingId}
                 />
               );
