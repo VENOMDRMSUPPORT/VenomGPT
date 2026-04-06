@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
   Zap, CheckCircle2, AlertCircle, Info, Cpu, Database,
@@ -357,7 +358,18 @@ export default function SettingsPage() {
   const history = data?.history;
 
   const set = useCallback(<K extends keyof VenomGPTSettings>(key: K, value: VenomGPTSettings[K]) => {
-    update({ [key]: value } as Partial<VenomGPTSettings>);
+    update({ [key]: value } as Partial<VenomGPTSettings>, {
+      onSuccess: () => {
+        toast({ title: "Saved", description: "Setting updated." });
+      },
+      onError: (err) => {
+        toast({
+          title: "Save failed",
+          description: err instanceof Error ? err.message : String(err),
+          variant: "destructive",
+        });
+      },
+    });
   }, [update]);
 
   const scrollToSection = (id: string) => {
@@ -526,7 +538,22 @@ export default function SettingsPage() {
                     <ReadOnlyValue value={history?.filePath ?? "—"} mono tm={tm} />
                   </SettingRow>
                   <SettingRow label="Clear History" description="Permanently delete all task history." badge="functional" tm={tm}>
-                    <ConfirmButton label="Clear History" confirmLabel="Yes, clear all" icon={Trash2} onConfirm={clearHist} disabled={history?.count === 0} tm={tm} />
+                    <ConfirmButton
+                      label="Clear History"
+                      confirmLabel="Yes, clear all"
+                      icon={Trash2}
+                      onConfirm={async () => {
+                        try {
+                          await clearHist();
+                          toast({ title: "History cleared", description: "All task records have been deleted." });
+                        } catch (err) {
+                          toast({ title: "Clear failed", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+                          throw err;
+                        }
+                      }}
+                      disabled={history?.count === 0}
+                      tm={tm}
+                    />
                   </SettingRow>
                 </SectionCard>
 
@@ -543,7 +570,22 @@ export default function SettingsPage() {
                     <p style={{ fontSize: 13, fontWeight: 600, color: tm.textPrimary, margin: 0 }}>Reset all settings</p>
                     <p style={{ fontSize: 11, color: tm.textMuted, marginTop: 3, margin: 0 }}>Restore every setting to factory defaults.</p>
                   </div>
-                  <ConfirmButton label="Reset to defaults" confirmLabel="Yes, reset all" variant="warning" icon={RotateCcw} onConfirm={async () => { await reset(); }} tm={tm} />
+                  <ConfirmButton
+                    label="Reset to defaults"
+                    confirmLabel="Yes, reset all"
+                    variant="warning"
+                    icon={RotateCcw}
+                    onConfirm={async () => {
+                      try {
+                        await reset();
+                        toast({ title: "Settings reset", description: "All settings restored to factory defaults." });
+                      } catch (err) {
+                        toast({ title: "Reset failed", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
+                        throw err;
+                      }
+                    }}
+                    tm={tm}
+                  />
                 </motion.div>
 
                 <div style={{ height: 32 }} />
