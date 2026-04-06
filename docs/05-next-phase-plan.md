@@ -47,6 +47,7 @@ These areas are effectively closed and should not be framed as upcoming work:
 - API Base URL Audit (Pass 6): 33 root-relative `fetch('/api/…')` calls fixed across 12 frontend files; `API_BASE` pattern applied consistently; no silent fallbacks
 - Projects / Workspace Manager (Pass 7): "Coming Soon" banner in `apps.tsx` replaced with live project list, create form, workspace select (active indicator), inline description edit, delete with 409 active-project guard — all wired to confirmed `/projects` backend routes; no backend changes
 - Remaining Orchestration Surfaces (Pass 8): `OrchestrationBlock` expandable per lane (WRITE_FILE + EXEC_COMMAND, READ_FILE excluded, serial fallback labeled "Serial"); "View scheduling analysis →" deeplink in Transcript tab (condition: `dependencyAnalysis` present in evidence; target: Inspect tab)
+- Advanced Action Filtering / Search (Transcript Tab): filter chips by action type, text search by file path or command, collapse all / expand all — confirmed present in `task-console.tsx`; equivalent to EvidencePanel filter surface
 
 ---
 
@@ -69,22 +70,6 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 ---
 
-### 2. Advanced Action Filtering / Search
-
-**What it is**: Surface the existing action selector infrastructure in a filtering UI within the transcript console.
-
-**Why now**: `actionSelectors.ts` already provides the computation layer. `evidence-panel.tsx` already has filter chips and text search (added in Task #9). The transcript tab has no equivalent.
-
-**Scope**:
-- Filter by action type (reads only, writes only, commands only, verifications only)
-- Search by file path or command text
-- Collapse all / expand all action groups
-- No backend changes required — all data already present in frontend action state
-
-**Risk**: Low — additive UI pass, no backend dependencies.
-
----
-
 ## Out of Scope (Near Term)
 
 - `summaryEmitter` extraction — deferred, touches messages thread
@@ -96,21 +81,19 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 ## Recommended Sequence
 
-The Backend Closeout Pass (route extraction, test scaffolding) is complete. The backend is confirmed trusted. Pass 4 (Premium Orchestration UI) is substantially complete — lane-level evidence, continuation lineage, approval gate UI, and provider diagnostics are all delivered. Pass 5 (Product Polish — settings, history UX, board kanban, prompt suggestions, integrations provider status) is fully complete. The remaining high-leverage directions are the residual orchestration surfaces (dependency graph, scheduler reasoning, replay at scale) and advanced action filtering in the transcript tab.
+The Backend Closeout Pass (route extraction, test scaffolding) is complete. The backend is confirmed trusted. Pass 4–8 are all complete. The only remaining high-leverage direction is the residual orchestration surfaces.
 
 ```
-Phase A: Advanced Action Filtering / Search (Transcript Tab)
-  - Short, low-risk, no backend work
-  - High user-facing value relative to effort
-  - EvidencePanel already has filter chips + text search; this brings parity to Transcript tab
+(Phase A: Advanced Action Filtering / Search — COMPLETE: filter chips, text search,
+ collapse all / expand all confirmed in task-console.tsx)
 
-Phase B: Premium Workspace Orchestration Surface (Remaining)  ← strategic top priority
-  - Dependency graph view, scheduler reasoning surface, merge result explanation, replay at scale
-  - All underlying data is in place; this is a pure UI pass
-  - Start with dependency graph view as the highest-leverage visual
+(Phase B: Premium Workspace Orchestration Surface — partially done: lane-level evidence,
+ continuation lineage, approval gate UI, per-lane contribution summary, and scheduling deeplink
+ are all delivered in Pass 4 + Pass 8. Remaining: dependency graph view, scheduler reasoning
+ surface, replay at orchestration scale)
 
 (Phase C and Phase D are COMPLETE — closed as P3 and P4)
-(Pass 4 and Pass 5 are COMPLETE — see "What Is Now Closed" above)
+(Pass 4, Pass 5, Pass 6, Pass 7, Pass 8 are COMPLETE — see "What Is Now Closed" above)
 ```
 
 Each phase should be a single bounded engineering pass with an explicit exit condition.
