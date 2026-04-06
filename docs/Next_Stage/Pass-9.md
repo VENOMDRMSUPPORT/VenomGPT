@@ -43,19 +43,20 @@ Per-lane, not per-step within a lane. No replay timing metadata.
 
 **The gap**: `potentiallyIndependentActionIds` lists raw action UUIDs. A user reading
 the Evidence Panel cannot tell from a UUID which file or command each ID refers to.
-`ActionRecord[]` is already in scope in `evidence-panel.tsx` and carries `filePath`
-and `actionType` for each action. Cross-referencing the two arrays would replace
-opaque UUIDs with readable `filePath` + `actionType` pairs.
+`ActionRecord[]` is already in scope in `evidence-panel.tsx` (from `actionSelectors.ts`)
+and carries `id`, `type` (ActionType), and `meta` where `meta.filePath` holds the file
+path for read/write actions. Cross-referencing the two arrays would replace opaque UUIDs
+with readable `type` + `meta.filePath` pairs.
 
 **Data sources confirmed in scope** (no new fetch needed):
 - `analysis.potentiallyIndependentActionIds: string[]` — the IDs to look up
-- `actions: ActionRecord[]` — already passed into the evidence panel; carries `id`,
-  `filePath`, `actionType`, `status`, `outcome`
+- `actions: ActionRecord[]` — from `actionSelectors.ts`; carries `id`, `type`,
+  `meta` (`meta.filePath` for read/write actions), `status`
 
 **Scope**:
 - Replace the raw UUID chip list in `DependencyGraphBlock` with a lookup against
-  `ActionRecord[]`: for each ID, find the matching action and show `actionType` +
-  `filePath` (truncated) + `status`
+  `ActionRecord[]`: for each ID, find the matching action and show `type` +
+  `meta.filePath` (truncated, if applicable) + `status`
 - If an ID has no matching `ActionRecord` (older tasks, mismatched data), fall back
   to showing the raw UUID — do not crash or hide the row
 - Collapsed by default (same toggle behavior as today)
@@ -109,7 +110,7 @@ Sub-group B is formally deferred to a future backend spike + frontend pass.
 
 - The collapsible section in `DependencyGraphBlock` labeled "Read-only (first-access)
   action IDs" now shows, for each entry in `potentiallyIndependentActionIds`, the
-  matching `actionType` and `filePath` from `ActionRecord[]` instead of the raw UUID
+  matching `type` and `meta.filePath` from `ActionRecord[]` instead of the raw UUID
 - If no matching `ActionRecord` is found for an ID, the UUID is shown as a fallback
   (with a visual indicator that it is unresolved) — no crash, no hidden row
 - The expand/collapse toggle behavior is unchanged
@@ -136,5 +137,6 @@ Sub-group B is formally deferred to a future backend spike + frontend pass.
 ## Relevant files
 
 - `artifacts/workspace-ide/src/components/panels/evidence-panel.tsx` — `DependencyGraphBlock` (line 1357), prop threading to verify
-- `artifacts/workspace-ide/src/lib/evidenceTypes.ts` — `DependencyAnalysis`, `LaneSummary`, `ActionRecord`
+- `artifacts/workspace-ide/src/lib/evidenceTypes.ts` — `DependencyAnalysis`, `LaneSummary`
+- `artifacts/workspace-ide/src/lib/actionSelectors.ts` — `ActionRecord` (`id`, `type`, `meta` → `meta.filePath` for read/write, `status`, `laneId`)
 - `artifacts/api-server/src/lib/orchestrator/dependencyClassifier.ts` — backend `DependencyAnalysis` shape (reference only)
