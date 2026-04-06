@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   useIdeStore,
   type ChildTask,
@@ -8,7 +8,7 @@ import {
   ListChecks, Loader2,
   Sparkles, X,
   RefreshCw, Crown,
-  Plus, LayoutGrid,
+  Plus, LayoutGrid, Search,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -20,12 +20,20 @@ const TASK_RAIL_WIDTH = 240;
 // hidden here — they remain visible in the full task board.
 const HIDDEN_IN_LIST = new Set<BoardTaskStatus>(['done', 'archived', 'draft', 'pending', 'cancelled']);
 
+// Status filter chips available in the search bar.
+// These surface the "history" statuses that are normally hidden from the rail.
+const FILTER_CHIPS: { status: BoardTaskStatus; label: string; color: string }[] = [
+  { status: 'done',        label: 'Done',        color: 'text-green-400 border-green-400/30 bg-green-400/8' },
+  { status: 'error',       label: 'Error',       color: 'text-red-400 border-red-400/30 bg-red-400/8' },
+  { status: 'cancelled',   label: 'Cancelled',   color: 'text-red-300 border-red-300/25 bg-red-300/6' },
+  { status: 'interrupted', label: 'Interrupted', color: 'text-amber-400 border-amber-400/30 bg-amber-400/8' },
+];
+
 function formatIndex(index: number): string {
   return `#${String(index).padStart(3, '0')}`;
 }
 
 // ─── Status visual config ─────────────────────────────────────────────────────
-// Dot colors and labels are truthful to the actual task lifecycle states.
 
 const STATUS_CONFIG: Record<BoardTaskStatus, { dot: string; label: string }> = {
   draft:       { dot: 'bg-muted-foreground/40',    label: 'Draft'       },
@@ -95,10 +103,64 @@ function TaskRow({ task, isActive, onSelect, onDelete, deletingId }: TaskRowProp
   );
 }
 
+// ─── Search + filter bar ──────────────────────────────────────────────────────
+
+interface FilterBarProps {
+  search: string;
+  onSearch: (v: string) => void;
+  activeChips: Set<BoardTaskStatus>;
+  onToggleChip: (s: BoardTaskStatus) => void;
+}
+
+function FilterBar({ search, onSearch, activeChips, onToggleChip }: FilterBarProps) {
+  return (
+    <div className="px-2 pt-1.5 pb-1 space-y-1 border-b border-panel-border/30">
+      {/* Search input */}
+      <div className="relative">
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/30 pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={e => onSearch(e.target.value)}
+          placeholder="Filter tasks…"
+          className="w-full bg-background/40 border border-panel-border/40 rounded px-2 py-1 pl-6 text-[11px] text-foreground/80 placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+        />
+        {search && (
+          <button
+            onClick={() => onSearch('')}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-muted-foreground/60 rounded"
+          >
+            <X className="w-2.5 h-2.5" />
+          </button>
+        )}
+      </div>
+      {/* Status chips */}
+      <div className="flex flex-wrap gap-1">
+        {FILTER_CHIPS.map(({ status, label, color }) => {
+          const active = activeChips.has(status);
+          return (
+            <button
+              key={status}
+              onClick={() => onToggleChip(status)}
+              className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border transition-all ${
+                active ? color : 'text-muted-foreground/35 border-panel-border/30 bg-transparent hover:border-panel-border/60'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TaskListPanel() {
-  const [deletingId, setDeletingId]   = useState<string | null>(null);
+  const [deletingId, setDeletingId]     = useState<string | null>(null);
+  const [search, setSearch]             = useState('');
+  const [activeChips, setActiveChips]   = useState<Set<BoardTaskStatus>>(new Set());
 
   const activeTaskId         = useIdeStore(s => s.activeTaskId);
   const viewingTaskId        = useIdeStore(s => s.viewingTaskId);
@@ -116,15 +178,40 @@ export function TaskListPanel() {
   const mainView             = useIdeStore(s => s.mainView);
   const sidebarOpen          = useIdeStore(s => s.sidebarOpen);
 
+  const isFiltering = search.trim().length > 0 || activeChips.size > 0;
+
   // Poll every 5 s to keep tasks fresh.
   useEffect(() => {
     const id = setInterval(() => { void fetchBoard(); }, 5000);
     return () => clearInterval(id);
   }, [fetchBoard]);
 
-  // Derived lists.
-  const activeTasks = childTasks.filter(t => !HIDDEN_IN_LIST.has(t.status));
-  const hiddenCount = childTasks.filter(t => HIDDEN_IN_LIST.has(t.status)).length;
+  // ── Filter logic ────────────────────────────────────────────────────────────
+  // When no filter is active: show only active tasks (same as before).
+  // When any filter is active: show all tasks that match the search AND status.
+
+  const filteredTasks = useMemo((): ChildTask[] => {
+    if (!isFiltering) return childTasks.filter(t => !HIDDEN_IN_LIST.has(t.status));
+
+    const q = search.trim().toLowerCase();
+    return childTasks.filter(t => {
+      const matchesStatus = activeChips.size === 0 || activeChips.has(t.status);
+      const matchesSearch = q.length === 0 || (t.prompt ?? '').toLowerCase().includes(q) || (t.name ?? '').toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [childTasks, search, activeChips, isFiltering]);
+
+  const totalVisible = isFiltering ? childTasks.length : childTasks.filter(t => !HIDDEN_IN_LIST.has(t.status)).length;
+
+  // ── Chip toggle ─────────────────────────────────────────────────────────────
+  const toggleChip = useCallback((status: BoardTaskStatus) => {
+    setActiveChips(prev => {
+      const next = new Set(prev);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  }, []);
 
   // ── Task selection ─────────────────────────────────────────────────────────
 
@@ -181,12 +268,13 @@ export function TaskListPanel() {
     );
   }
 
-  // Derive workspace display name: prefer masterSession.name, fall back to
-  // the last path segment of workspaceRoot, then a neutral "Workspace" label.
+  // Derive workspace display name
   const workspaceName = masterSession?.name
     || (masterSession?.workspaceRoot
         ? (masterSession.workspaceRoot.split('/').filter(Boolean).pop() || 'Workspace')
         : 'Workspace');
+
+  const hiddenCount = childTasks.filter(t => HIDDEN_IN_LIST.has(t.status)).length;
 
   return (
     <div
@@ -205,6 +293,16 @@ export function TaskListPanel() {
           <RefreshCw className="w-3 h-3" />
         </button>
       </div>
+
+      {/* ── Search + filter bar ───────────────────────────────────────────── */}
+      {masterSession && (
+        <FilterBar
+          search={search}
+          onSearch={setSearch}
+          activeChips={activeChips}
+          onToggleChip={toggleChip}
+        />
+      )}
 
       {/* ── Scrollable body ───────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto vg-scroll min-h-0">
@@ -229,44 +327,62 @@ export function TaskListPanel() {
             )}
 
             {/* ── + New task button — directly below workspace card ─────── */}
-            <button
-              onClick={() => setMainView('editor')}
-              className="mx-2 mt-1.5 mb-1 w-[calc(100%-1rem)] flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors border-dashed border-primary/20 text-muted-foreground/50 hover:text-foreground/80 hover:border-primary/35 hover:bg-primary/5"
-              title="Create a new task"
-            >
-              <Plus className="w-3 h-3 shrink-0" />
-              + New task
-            </button>
+            {!isFiltering && (
+              <button
+                onClick={() => setMainView('editor')}
+                className="mx-2 mt-1.5 mb-1 w-[calc(100%-1rem)] flex items-center gap-1.5 px-2 py-1.5 rounded border text-[11px] font-medium transition-colors border-dashed border-primary/20 text-muted-foreground/50 hover:text-foreground/80 hover:border-primary/35 hover:bg-primary/5"
+                title="Create a new task"
+              >
+                <Plus className="w-3 h-3 shrink-0" />
+                + New task
+              </button>
+            )}
 
             {/* Task list */}
             <div className="px-2 pt-1">
               <div className="flex items-center gap-1 px-1 mb-1">
                 <span className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-widest flex-1">
-                  Active &amp; Needs Review
+                  {isFiltering ? 'Filtered results' : 'Active & Needs Review'}
                 </span>
-                <span className="text-[9px] text-muted-foreground/30 tabular-nums">
-                  {activeTasks.length}
-                </span>
+                {/* Match count — shown when any filter is active */}
+                {isFiltering ? (
+                  <span className="text-[9px] text-muted-foreground/40 tabular-nums">
+                    {filteredTasks.length} of {totalVisible}
+                  </span>
+                ) : (
+                  <span className="text-[9px] text-muted-foreground/30 tabular-nums">
+                    {filteredTasks.length}
+                  </span>
+                )}
               </div>
 
-              {activeTasks.length === 0 ? (
+              {filteredTasks.length === 0 ? (
                 <div className="text-center py-4 px-2">
-                  <Sparkles className="w-4 h-4 mx-auto mb-1.5 text-muted-foreground/20" />
-                  <p className="text-[10px] text-muted-foreground/35 leading-snug">
-                    No active tasks.
-                    {hiddenCount > 0 && (
-                      <> <button
-                        onClick={() => setMainView('board')}
-                        className="text-primary/50 hover:text-primary/80 underline transition-colors"
-                      >
-                        View {hiddenCount} completed
-                      </button></>
-                    )}
-                  </p>
+                  {isFiltering ? (
+                    <>
+                      <Search className="w-4 h-4 mx-auto mb-1.5 text-muted-foreground/20" />
+                      <p className="text-[10px] text-muted-foreground/35 leading-snug">No tasks match your filter.</p>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mx-auto mb-1.5 text-muted-foreground/20" />
+                      <p className="text-[10px] text-muted-foreground/35 leading-snug">
+                        No active tasks.
+                        {hiddenCount > 0 && (
+                          <> <button
+                            onClick={() => setMainView('board')}
+                            className="text-primary/50 hover:text-primary/80 underline transition-colors"
+                          >
+                            View {hiddenCount} completed
+                          </button></>
+                        )}
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-0.5">
-                  {activeTasks.map(task => (
+                  {filteredTasks.map(task => (
                     <TaskRow
                       key={task.id}
                       task={task}
@@ -281,6 +397,10 @@ export function TaskListPanel() {
                   ))}
                 </div>
               )}
+
+              {/* B2 note: bulk-delete disabled — DELETE /api/settings/history is full-history wipe only (Option C).
+                  Per-task or batch deletion endpoints are not available from settings.ts.
+                  Full history clear is available in Settings → History & Data → Clear History. */}
             </div>
           </>
         )}
@@ -288,7 +408,6 @@ export function TaskListPanel() {
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <div className="border-t border-panel-border shrink-0 bg-background/20">
-        {/* Open board control */}
         <div className="flex items-center px-2.5 py-1.5">
           <button
             onClick={() => setMainView(mainView === 'board' ? 'editor' : 'board')}
