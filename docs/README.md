@@ -1,6 +1,6 @@
 # VenomGPT Documentation Pack
 
-**Last validated**: April 6, 2026 (post Tasks #1–#16 + HITL Recovery + Orchestration Roadmap Phases 1–4 + P3/P4 Closeout + Provider-Layer Stabilization Arc Tasks #18–#22 + Repo Cleanup + Backend Closeout Pass: agentContinuation.ts extraction, agent.ts 993 lines, 31 tests passing + Pass 4: Premium Orchestration UI — OrchestrationBlock, ApprovalGateCard, SelectivelyBlockedLaneGrid, ProviderDiagnosticsPanel + Pass 5: Product Polish — settings toasts, task history search/filter chips, board status-change buttons + plan badges, live prompt suggestions, provider diagnostics panel on integrations page + Pass 6: API Base URL Audit — 33 fetch calls fixed across 12 files + Pass 7: Projects / Workspace Manager — live project UI in apps.tsx + Pass 8: Remaining Orchestration Surfaces — per-lane contribution summary + scheduling deeplink)
+**Last validated**: April 6, 2026 — current confirmed state after Pass 9A. Current orchestration/workspace arc complete (Pass 4–9A). Passes 1–9A all closed. Replay-at-scale formally deferred (backend-first). Broader platform work (provider drivers, MCP, SaaS, cloud execution) outside this arc and not in scope.
 
 ## What This Is
 
@@ -106,10 +106,13 @@ This judgment is **backend-wise only**. It is not a claim of parity with Replit 
   - Workspace composer prompt suggestions: up to 3 suggestions from `GET /board/prompts` appear as clickable chips when composer is idle
   - Integrations page: `ProviderDiagnosticsPanel` replaces placeholder content; shows Z.A.I provider status, model, lanes, and connection health
 
-### What Is Still Open
+### What Is Still Open (outside the current arc)
 
-- Premium workspace orchestration surface (remaining) — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, per-lane contribution summary, and scheduling deeplink are done (Pass 4 + Pass 8)
-- Advanced action filtering in transcript (filter by type, search by path/command text in transcript tab — EvidencePanel already has this)
+- **Replay at orchestration scale** — formally deferred; requires a backend lane-timeline endpoint; no frontend pass until endpoint shape confirmed
+- **Per-step dependency/reasoning data** — not surfaceable without a data schema change; `DependencyAnalysis` has aggregate counts + single `serialReason` only
+- **Provider drivers** — Codex (Phase 3), OpenAI Platform (Phase 4), Qwen (Phase 5) — all explicitly deferred with documented re-entry conditions
+- **MCP / ecosystem surfaces** — longer horizon, depends on product maturity decisions
+- **Broader platform / SaaS / cloud agent execution** — out of scope for this arc
 
 ### Provider / Runtime
 
@@ -130,8 +133,9 @@ This judgment is **backend-wise only**. It is not a claim of parity with Replit 
 
 ## Next Highest-Value Directions
 
-1. **Premium Workspace Orchestration Surface (remaining)** — dependency graph view, scheduler reasoning surface, replay at orchestration scale; lane-level evidence, continuation lineage, approval gate UI, provider diagnostics, per-lane contribution summary, and scheduling deeplink are now done (Pass 4 + Pass 8)
-2. **Advanced action filtering / search in transcript** — filter transcript tab by action type, search by file path or command; EvidencePanel (Inspect tab) already has this; transcript tab does not
+1. **Replay at orchestration scale** — backend-first; no lane-timeline endpoint exists; gated on a separate backend spike decision before any frontend pass
+2. **Provider layer expansion** — Codex/OpenAI/Qwen drivers explicitly deferred; re-entry conditions documented in Provider-Layer Stabilization Arc closeout record
+3. **MCP / ecosystem / broader platform** — longer horizon; depends on product direction decisions outside the current arc
 
 ---
 

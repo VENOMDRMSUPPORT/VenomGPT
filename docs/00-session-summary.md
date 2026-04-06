@@ -399,11 +399,22 @@ Closed two remaining visual gaps in the orchestration UI:
 - **Per-lane contribution summary** (`evidence-panel.tsx`): `OrchestrationBlock` now accepts `actions?: ActionRecord[]`; per-lane expand toggle (`expandedLanes` state + `toggleLane()`); WRITE_FILE and EXEC_COMMAND shown per lane, READ_FILE excluded; serial fallback lanes labeled "Serial".
 - **Scheduling analysis deeplink** (`task-console.tsx`): `useTaskEvidence(viewingTaskId)` read directly in `TaskConsole`; `hasDependencyAnalysis` computed from `linkEvidenceData?.taskEvidence?.executionSummary?.dependencyAnalysis`; "View scheduling analysis →" link shown in Transcript tab when condition is true; clicking calls `setActiveTab('inspect')`.
 
+**Pass 9A — Action ID Cross-Reference in DependencyGraphBlock**
+The final item in the current orchestration/workspace arc. `DependencyGraphBlock` already rendered `serialReason`, class breakdown counts, and `potentiallyIndependentActionIds` as raw UUIDs. Pass 9A replaced the UUID chip list with human-readable rows cross-referenced against `ActionRecord[]`:
+- `depActionLabel()` helper resolves `type` + `meta.filePath` (for read/write) or `meta.command` (for exec) from each `ActionRecord`
+- `actionMap` built with `useMemo` — ID → ActionRecord lookup; no new fetch
+- Confirmed fallback: unresolved IDs show UUID with "unresolved" indicator; no crash, no hidden row
+- Minimal prop threading: `actions?: ActionRecord[]` added to `DependencyGraphBlock`; passed as `actionsData?.actions ?? []` from call site only
+- Per-step classification rows and per-step reasoning strings are confirmed absent from `DependencyAnalysis` — not implemented; not possible without a data schema change
+- Replay at orchestration scale: formally deferred as a backend-first spike; no lane-timeline endpoint exists
+
+This closes the **current orchestration/workspace documentation arc**. The arc covers Pass 4 through Pass 9A. Broader platform work (provider drivers, MCP, SaaS, cloud execution) remains outside this arc.
+
 ---
 
 ## Current Project Position
 
-VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`), a full premium orchestration UI surface (Pass 4), a complete product polish layer (Pass 5), a hardened API base URL layer (Pass 6), a live Projects/Workspace Manager UI (Pass 7), and per-lane orchestration contribution summaries + scheduling deeplink (Pass 8)**.
+VenomGPT is now a serious local execution-oriented AI coding workspace with a complete backend trust stack, live action streaming, a rich evidence/inspection UI, tool introspection, a truthful dependency classification model, bounded semi-parallel read burst, runtime-impact signaling, operator intervention endpoints, Human-in-the-Loop recovery, **a full parallel dispatch lane, checkpoint-aware continuation chains, an operator steering / approval workflow model, verification-orchestrated execution, per-file checkpoint operator UX (P3), full runtime lifecycle depth (P4), a stabilized provider layer (Z.A.I-only runtime with `providerRouter.ts` + `ZaiDriver.ts`), a full premium orchestration UI surface (Pass 4), a complete product polish layer (Pass 5), a hardened API base URL layer (Pass 6), a live Projects/Workspace Manager UI (Pass 7), per-lane orchestration contribution summaries + scheduling deeplink (Pass 8), and action ID cross-reference in DependencyGraphBlock (Pass 9A)**.
 
 **Backend orchestration / execution trust / lifecycle maturity is very strong.**
 
@@ -437,13 +448,16 @@ The project is no longer in an early MVP state. It is no longer a fragile shell.
 | API Base URL Audit (Pass 6) | 33 root-relative fetch calls fixed across 12 files; `API_BASE` pattern applied consistently |
 | Projects / Workspace Manager (Pass 7) | Live project list, create, select (active indicator), inline description edit, delete with 409 guard — all wired to confirmed backend routes |
 | Per-lane contribution summary + scheduling deeplink (Pass 8) | `OrchestrationBlock` expandable per lane (WRITE_FILE + EXEC_COMMAND only); "View scheduling analysis →" deeplink in Transcript tab |
+| Action ID cross-reference in DependencyGraphBlock (Pass 9A) | `potentiallyIndependentActionIds` UUIDs replaced with readable `type` + `meta.filePath/command` + `status` rows; fallback for unresolved IDs |
 
-### Still Open
+### Still Open (outside the current orchestration/workspace arc)
 
 | Area | Status |
 |---|---|
-| Premium workspace orchestration surface (remaining) | Partially done (Pass 4 + Pass 8); remaining: dependency graph view, scheduler reasoning surface, replay at orchestration scale |
-| Advanced action filtering / search in transcript tab | Open — infrastructure in place; EvidencePanel has this; transcript tab does not |
+| Replay at orchestration scale | Formally deferred — requires a backend lane-timeline endpoint that does not exist; no frontend pass until endpoint is confirmed |
+| Codex driver (Phase 3), OpenAI Platform driver (Phase 4), Qwen driver (Phase 5) | Explicitly deferred — see re-entry conditions in Provider-Layer Stabilization Arc closeout record |
+| MCP / ecosystem surfaces | Longer horizon — depends on product maturity decisions |
+| Broader platform / SaaS / cloud agent execution | Out of scope for this arc — not a near-term target |
 
 ### Intentionally Deferred (No Timeline)
 

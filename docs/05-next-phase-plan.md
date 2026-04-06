@@ -2,7 +2,7 @@
 
 ## Current Position
 
-The VenomGPT backend trust stack is materially complete through Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing). Orchestration architecture, execution gating, staged isolation, durable checkpoint/rollback, runtime-aware verification, persistent observability, task replay, lifecycle maturity, action-level execution, live WebSocket action streaming, replay/evidence UI, execution history inspection, tool introspection, dependency classification groundwork, bounded semi-parallel read burst, runtime-impact signaling, operator intervention (pause/resume/proceed-as-partial), Human-in-the-Loop recovery, **parallel dispatch foundations, checkpoint-aware continuation chains, operator steering / approval workflows, verification-orchestrated execution, per-file checkpoint operator UX, runtime lifecycle depth, a stabilized Z.A.I-only provider runtime (`providerRouter.ts` + `ZaiDriver.ts`), a 31-test automated regression baseline, API base URL hardening (Pass 6), a live Projects/Workspace Manager UI (Pass 7), and per-lane orchestration contribution summaries + scheduling deeplink (Pass 8)** are all confirmed working.
+The VenomGPT backend trust stack is materially complete through Tasks #1–#16 plus HITL Recovery, Orchestration Roadmap Phases 1–4 (Tasks #7–#10), P3 (per-file apply/discard, staging badges, checkpoint history, per-file diff view), P4 (runtime lifecycle depth), the Provider-Layer Stabilization Arc (Phases 0–2, Tasks #18–#22, repo cleanup), and the Backend Closeout Pass (route extraction into `agentContinuation.ts`, `agent.ts` reduced to 993 lines, 31 automated tests added and passing). Orchestration architecture, execution gating, staged isolation, durable checkpoint/rollback, runtime-aware verification, persistent observability, task replay, lifecycle maturity, action-level execution, live WebSocket action streaming, replay/evidence UI, execution history inspection, tool introspection, dependency classification groundwork, bounded semi-parallel read burst, runtime-impact signaling, operator intervention (pause/resume/proceed-as-partial), Human-in-the-Loop recovery, **parallel dispatch foundations, checkpoint-aware continuation chains, operator steering / approval workflows, verification-orchestrated execution, per-file checkpoint operator UX, runtime lifecycle depth, a stabilized Z.A.I-only provider runtime (`providerRouter.ts` + `ZaiDriver.ts`), a 31-test automated regression baseline, API base URL hardening (Pass 6), a live Projects/Workspace Manager UI (Pass 7), per-lane orchestration contribution summaries + scheduling deeplink (Pass 8), and action ID cross-reference in DependencyGraphBlock (Pass 9A)** are all confirmed working.
 
 Frontend and product experience are in a strong position. The remaining open areas are incremental rather than foundational.
 
@@ -48,6 +48,7 @@ These areas are effectively closed and should not be framed as upcoming work:
 - Projects / Workspace Manager (Pass 7): "Coming Soon" banner in `apps.tsx` replaced with live project list, create form, workspace select (active indicator), inline description edit, delete with 409 active-project guard — all wired to confirmed `/projects` backend routes; no backend changes
 - Remaining Orchestration Surfaces (Pass 8): `OrchestrationBlock` expandable per lane (WRITE_FILE + EXEC_COMMAND, READ_FILE excluded, serial fallback labeled "Serial"); "View scheduling analysis →" deeplink in Transcript tab (condition: `dependencyAnalysis` present in evidence; target: Inspect tab)
 - Advanced Action Filtering / Search (Transcript Tab): filter chips by action type, text search by file path or command, collapse all / expand all — confirmed present in `task-console.tsx`; equivalent to EvidencePanel filter surface
+- Action ID Cross-Reference (Pass 9A): `potentiallyIndependentActionIds` UUID list in `DependencyGraphBlock` replaced with readable `type` + `meta.filePath/command` + `status` rows; fallback for unresolved IDs; no new fetch; closes current orchestration/workspace arc
 
 ---
 
@@ -57,16 +58,16 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 **What it is**: Expose the remaining orchestration capability cleanly in the product.
 
-**What is already done (Pass 4 + Pass 8)**: Lane-level evidence panel (`OrchestrationBlock`), continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), `ProviderDiagnosticsPanel`, per-lane contribution summary (expandable WRITE_FILE + EXEC_COMMAND per lane), "View scheduling analysis →" deeplink.
+**What is confirmed done (Pass 4 + Pass 8 + Pass 9A)**: Lane-level evidence panel (`OrchestrationBlock`), continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), `ProviderDiagnosticsPanel`, per-lane contribution summary, scheduling deeplink, action ID cross-reference with readable file paths.
 
-**Why now**: The foundation is fully in place. The remaining surfaces are additive UI passes with no backend architectural risk.
+**Confirmed not buildable without backend work**: Per-step dependency classification rows and per-step reasoning strings do not exist in `DependencyAnalysis` — the data shape has aggregate counts and a single `serialReason` string only.
 
-**Scope (remaining)**:
-- Dependency graph view: visual or structured representation of the dispatch graph for a run
-- Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
+**Formally deferred (backend-first)**:
+- Replay at orchestration scale: requires a lane-timeline endpoint that does not currently exist; no frontend pass until endpoint shape is confirmed from stored data
 
-**Risk**: Medium — UI work with no backend architectural risk. Individual pieces are additive.
+**This direction is effectively closed for the current arc.** Non-orchestration platform work (provider drivers, MCP, SaaS) is outside this direction's scope.
+
+**Risk**: N/A — arc closed. Replay-at-scale gated on a separate backend spike decision.
 
 ---
 
@@ -81,19 +82,14 @@ These areas are effectively closed and should not be framed as upcoming work:
 
 ## Recommended Sequence
 
-The Backend Closeout Pass (route extraction, test scaffolding) is complete. The backend is confirmed trusted. Pass 4–8 are all complete. The only remaining high-leverage direction is the residual orchestration surfaces.
+The Backend Closeout Pass (route extraction, test scaffolding) is complete. The backend is confirmed trusted. Pass 4–9A are all complete. The current orchestration/workspace arc is closed. The only remaining direction outside this arc is replay-at-scale (backend-first spike) and provider/platform expansion (explicitly deferred).
 
 ```
-(Phase A: Advanced Action Filtering / Search — COMPLETE: filter chips, text search,
- collapse all / expand all confirmed in task-console.tsx)
-
-(Phase B: Premium Workspace Orchestration Surface — partially done: lane-level evidence,
- continuation lineage, approval gate UI, per-lane contribution summary, and scheduling deeplink
- are all delivered in Pass 4 + Pass 8. Remaining: dependency graph view, scheduler reasoning
- surface, replay at orchestration scale)
-
+(Phase A: Advanced Action Filtering / Search — COMPLETE)
+(Phase B: Premium Workspace Orchestration Surface — current arc COMPLETE via Pass 4 + 8 + 9A:
+ all available data surfaced; per-step data absent from schema; replay-at-scale backend-first)
 (Phase C and Phase D are COMPLETE — closed as P3 and P4)
-(Pass 4, Pass 5, Pass 6, Pass 7, Pass 8 are COMPLETE — see "What Is Now Closed" above)
+(Pass 4–9A are COMPLETE — see "What Is Now Closed" above)
 ```
 
 Each phase should be a single bounded engineering pass with an explicit exit condition.

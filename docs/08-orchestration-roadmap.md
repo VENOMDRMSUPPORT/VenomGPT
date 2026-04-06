@@ -92,14 +92,17 @@ The core orchestration arc is closed. The next maturity arc is the product surfa
 - Per-lane contribution summary: `OrchestrationBlock` now expandable per lane; shows WRITE_FILE + EXEC_COMMAND actions per lane; READ_FILE excluded; serial fallback lanes labeled "Serial"
 - Scheduling analysis deeplink: "View scheduling analysis →" in Transcript tab navigates to Inspect tab when `dependencyAnalysis` evidence is present
 
-**Remaining scope**:
-- Dependency graph view: visual or structured representation of the dispatch graph for a run
-- Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
+**Delivered in Pass 9A** (closed):
+- Action ID cross-reference: `potentiallyIndependentActionIds` UUID list replaced with readable rows (`type` + `meta.filePath/command` + `status`) via `depActionLabel()` helper + `actionMap` lookup in `DependencyGraphBlock`
+- Confirmed not surfaced (data absent): per-step classification rows, per-step reasoning strings — `DependencyAnalysis` has aggregate counts + single `serialReason` string only; no per-step list in schema
+- **Direction 1 is effectively closed for the current arc.** All data that exists is now surfaced.
 
-**Why now**: All four orchestration phases are complete. The underlying model is stable. Exposing surfaces before the model was stable would have created UI drift. Now the UI pass is both safe and high-leverage.
+**Formally deferred (backend-first)**:
+- Replay at orchestration scale: requires a lane-timeline endpoint not currently in `api-server/src/routes/`; no frontend pass until endpoint shape is confirmed
 
-**Risk**: Medium — UI work with no backend architectural risk. Surface area is large but individual pieces are additive.
+**Why closed**: All available orchestration data is now surfaced. Remaining items require data schema changes (per-step) or a new backend endpoint (replay). Neither is a frontend-only pass.
+
+**Risk**: N/A — arc closed for current data shape.
 
 ---
 

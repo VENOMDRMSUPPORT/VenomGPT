@@ -52,25 +52,7 @@ The following areas were previously pending and are now done. They should not re
 - Projects / Workspace Manager (Pass 7): `apps.tsx` "Coming Soon" banner replaced with live project list (`useListProjects()`), create form (`useCreateProject()`), workspace select (`useSelectProject()` + `getGetWorkspaceQueryKey()` + `getListFilesQueryKey()` invalidation), active indicator (`useGetWorkspace()` → `data?.root` vs `project.path`), inline description edit (raw PATCH), delete with 409 guard; no backend changes
 - Remaining Orchestration Surfaces (Pass 8): `OrchestrationBlock` expandable per lane — WRITE_FILE + EXEC_COMMAND shown, READ_FILE excluded, serial fallback labeled "Serial"; "View scheduling analysis →" deeplink in Transcript tab conditioned on `dependencyAnalysis` presence, navigates to Inspect tab
 - P2 / PP3 — Advanced Action Filtering / Search (Transcript Tab): confirmed delivered — filter chips by action type, text search by file path or command, collapse all / expand all are present in `task-console.tsx`; equivalent to EvidencePanel (Inspect tab) filter surface
-
----
-
-## Pending: Near-Term (Highest Leverage)
-
-### P1 — Premium Workspace Orchestration Surface (Remaining)
-
-**Status**: Partially done. Pass 4 delivered: lane-level evidence panel, continuation lineage view, approval gate UI (`ApprovalGateCard` + `SelectivelyBlockedLaneGrid`), and `ProviderDiagnosticsPanel`. Pass 8 delivered: per-lane contribution summary and scheduling deeplink. Remaining scope below.
-
-**What**: Expose the remaining orchestration capability in the product.
-
-**Scope (remaining)**:
-- Dependency graph view: visual or structured representation of the dispatch graph for a run
-- Scheduler reasoning surface: per-step explanation of why a step was parallelized or serialized
-- Replay at orchestration scale: replay a parallel run's lane sequence, not just a linear action list
-
-**Why**: The foundation is in place and the model is stable. The remaining surfaces are additive UI work with no backend risk.
-
-**Risk**: Medium — UI work, no backend architectural risk. Individual pieces are additive.
+- P1 — Premium Workspace Orchestration Surface (current arc closed): `DependencyGraphBlock` (serialReason, class breakdown, action ID cross-reference with readable rows via Pass 9A) + `OrchestrationBlock` per-lane expand + scheduling deeplink — all available data fully surfaced; per-step classification rows and per-step reasoning strings confirmed absent from data schema; replay-at-scale moved to "Intentionally Deferred" below
 
 ---
 
@@ -85,6 +67,9 @@ These items are explicitly deferred and should not be planned until the rational
 | `visualPipeline` extraction | Touches while-loop skeleton; stability risk outweighs benefit |
 | Broader platform / ecosystem expansion | Longer horizon; depends on product maturity first |
 | Multi-workspace parallel views | Switching between projects is supported; simultaneous multi-root views are out of scope |
+| Replay at orchestration scale | Backend-first — no lane-timeline endpoint exists; re-enter only after endpoint shape is confirmed from stored data (`history.json`, `laneEvidence`, `ActionRecord[]`) |
+| Per-step dependency classification rows | Data does not exist — `DependencyAnalysis` has aggregate counts only; requires a data schema change before any UI pass |
+| Per-step scheduler reasoning strings | Data does not exist — `serialReason` is a single run-level string; requires a data schema change before any UI pass |
 | Codex driver — Phase 3 (`OpenAICodexDriver`) | Explicitly deferred. Requires: (1) explicit product decision to re-enable Codex, (2) confirmation of correct `chatgpt.com/backend-api/codex` request/response schema before any code is written, (3) a dedicated implementation pass. Re-entry conditions are documented in the Z.A.I-Only Baseline Closeout Record (Task #21). |
 | OpenAI Platform API driver — Phase 4 (`OpenAIPlatformDriver`) | Explicitly deferred. Gated on a post-Phase-3 decision. Only implemented if explicitly decided after Phase 3 completes. |
 | Qwen integration — Phase 5 (`QwenDriver`) | Explicitly deferred. Qwen's actual integration mode (API key, OAuth, or OpenAI-compatible host) is unknown. No driver is implemented until the integration mode is confirmed. |
