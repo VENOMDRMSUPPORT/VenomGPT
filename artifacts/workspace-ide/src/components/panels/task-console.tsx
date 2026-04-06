@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useListAgentTasks } from '@workspace/api-client-react';
 import { useIdeStore, AgentLogEvent } from '@/store/use-ide-store';
+import type { LivePhaseState } from '@/store/use-ide-store';
 import {
   X, Loader2, Sparkles,
   AlignLeft, AlertCircle, CheckCircle2,
@@ -8,7 +9,7 @@ import {
   Activity, MapPin, ListChecks, ChevronRight, ChevronDown,
   FileCheck, GitBranch, DatabaseBackup, RotateCcw, Check,
   Clock, FileCode, WifiOff, ScanSearch, Shield, RefreshCw,
-  ChevronsDown, ChevronsUp,
+  ChevronsDown, ChevronsUp, Lock, Network,
 } from 'lucide-react';
 import { triggerRecheckRuntime } from '@/components/ui/runtime-status-bar';
 import { getVerifyQualityConfig } from '@/lib/verifyQuality';
@@ -1345,6 +1346,181 @@ function EmptyState() {
   );
 }
 
+// ─── P4: ApprovalGateCard ─────────────────────────────────────────────────────
+
+type ApprovalAction = 'approve' | 'deny' | 'selective';
+
+function ApprovalGateCard({ taskId, livePhase, laneIds }: {
+  taskId: string;
+  livePhase: LivePhaseState;
+  laneIds: string[];
+}) {
+  const [loading, setLoading] = useState<ApprovalAction | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [denyMode, setDenyMode] = useState(false);
+  const [denyNote, setDenyNote] = useState('');
+  const [selectiveMode, setSelectiveMode] = useState(false);
+  const [selectedLanes, setSelectedLanes] = useState<Set<string>>(new Set());
+
+  const callEndpoint = async (action: ApprovalAction, body: Record<string, unknown>) => {
+    setLoading(action); setError(null);
+    try {
+      const res = await fetch(`/api/agent/tasks/${taskId}/${action === 'selective' ? 'approve-selective' : action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json() as { message?: string; error?: string };
+      if (!res.ok) throw new Error(data.message ?? data.error ?? 'Request failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleApproveAll = () => {
+    callEndpoint('approve', {});
+  };
+
+  const handleDeny = () => {
+    if (!denyMode) { setDenyMode(true); setSelectiveMode(false); return; }
+    callEndpoint('deny', { note: denyNote.trim() || undefined });
+  };
+
+  const handleApproveSelective = () => {
+    if (!selectiveMode) {
+      setSelectiveMode(true); setDenyMode(false);
+      if (laneIds.length > 0) setSelectedLanes(new Set(laneIds));
+      return;
+    }
+    callEndpoint('selective', { approvedLaneIds: [...selectedLanes] });
+  };
+
+  const toggleLane = (id: string) => {
+    setSelectedLanes(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <div className="mx-2 my-1.5 rounded border border-blue-400/30 bg-blue-400/5 text-xs overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-400/15 bg-blue-400/8">
+        <Lock className="w-3.5 h-3.5 text-blue-400/70 shrink-0" />
+        <span className="text-blue-200/90 font-semibold text-[11px]">Awaiting Approval</span>
+      </div>
+
+      <div className="px-3 py-2 space-y-2">
+        {livePhase.blockedContext && (
+          <p className="text-muted-foreground/60 text-[11px] leading-relaxed">{livePhase.blockedContext}</p>
+        )}
+
+        {error && (
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded border border-red-400/30 bg-red-400/5 text-red-300/80 text-[11px]">
+            <AlertCircle className="w-3 h-3 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Deny input */}
+        {denyMode && (
+          <div className="space-y-1.5">
+            <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Denial note (optional)</span>
+            <textarea
+              value={denyNote}
+              onChange={e => setDenyNote(e.target.value)}
+              placeholder="Reason for denial…"
+              rows={2}
+              className="w-full bg-background/40 border border-panel-border/40 rounded px-2 py-1.5 text-[11px] text-foreground/80 placeholder-muted-foreground/30 resize-none focus:outline-none focus:border-red-400/40"
+            />
+          </div>
+        )}
+
+        {/* Selective lane picker */}
+        {selectiveMode && laneIds.length > 0 && (
+          <div className="space-y-1.5">
+            <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Approve lanes (checked = proceed)</span>
+            <div className="space-y-1">
+              {laneIds.map(id => (
+                <label key={id} className="flex items-center gap-2 cursor-pointer hover:bg-blue-400/5 px-1 py-0.5 rounded">
+                  <input
+                    type="checkbox"
+                    checked={selectedLanes.has(id)}
+                    onChange={() => toggleLane(id)}
+                    className="accent-blue-500"
+                  />
+                  <span className="font-mono text-blue-200/70 text-[11px]">{id}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+        {selectiveMode && laneIds.length === 0 && (
+          <div className="text-[11px] text-amber-400/60">Lane detail unavailable — use Approve all or Deny.</div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 pt-1 flex-wrap">
+          <button
+            onClick={handleApproveAll}
+            disabled={loading !== null}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-green-400/30 bg-green-400/8 text-green-300/80 text-[11px] font-medium hover:bg-green-400/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading === 'approve' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            Approve all
+          </button>
+          <button
+            onClick={handleDeny}
+            disabled={loading !== null}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-400/30 bg-red-400/8 text-red-300/80 text-[11px] font-medium hover:bg-red-400/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading === 'deny' ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+            {denyMode ? 'Confirm denial' : 'Deny'}
+          </button>
+          <button
+            onClick={handleApproveSelective}
+            disabled={loading !== null || (selectiveMode && selectedLanes.size === 0)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-blue-400/30 bg-blue-400/8 text-blue-300/80 text-[11px] font-medium hover:bg-blue-400/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading === 'selective' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+            {selectiveMode ? `Approve ${selectedLanes.size} lane${selectedLanes.size !== 1 ? 's' : ''}` : 'Approve selective'}
+          </button>
+          {(denyMode || selectiveMode) && (
+            <button
+              onClick={() => { setDenyMode(false); setSelectiveMode(false); setError(null); }}
+              className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 px-1"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── P4: SelectivelyBlockedLaneGrid ───────────────────────────────────────────
+
+function SelectivelyBlockedLaneGrid({ livePhase }: { livePhase: LivePhaseState }) {
+  return (
+    <div className="mx-2 my-1.5 rounded border border-amber-400/25 bg-amber-400/5 text-xs overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-amber-400/15 bg-amber-400/8">
+        <Network className="w-3.5 h-3.5 text-amber-400/70 shrink-0" />
+        <span className="text-amber-200/90 font-semibold text-[11px]">Selectively Blocked</span>
+        <span className="ml-auto text-[10px] text-amber-400/50">Some lanes were blocked by operator</span>
+      </div>
+      <div className="px-3 py-2 space-y-1.5">
+        {livePhase.blockedContext ? (
+          <p className="text-muted-foreground/60 text-[11px] leading-relaxed">{livePhase.blockedContext}</p>
+        ) : null}
+        <p className="text-amber-400/50 text-[11px]">Lane detail unavailable — see Inspect tab after task completes for full lane evidence.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main TaskConsole ─────────────────────────────────────────────────────────
 
 const EMPTY_LOGS: AgentLogEvent[] = [];
@@ -1376,6 +1552,7 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
   const mergeTaskActions  = useIdeStore(s => s.mergeTaskActions);
   const isConnected              = useIdeStore(s => s.isConnected);
   const pendingSubmitPrompt      = useIdeStore(s => s.pendingSubmitPrompt);
+  const livePhase                = useIdeStore(s => s.livePhase);
 
   // Task list — authoritative source of task status for historical tasks.
   // Used to enable the Inspect tab even when the transcript is empty (persistence-only tasks).
@@ -1577,6 +1754,16 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
     [currentActions]
   );
 
+  // Derive lane IDs from current actions for the ApprovalGateCard selective picker
+  const derivedLaneIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const a of currentActions) {
+      const laneId = (a as unknown as { laneId?: string }).laneId;
+      if (laneId) ids.add(laneId);
+    }
+    return [...ids].sort();
+  }, [currentActions]);
+
   // Detect if this task was conversational (no real work done)
   // Uses: route log category, step count, and action count
   const routeLog = useMemo(
@@ -1736,6 +1923,24 @@ export function TaskConsole({ resizable = false }: { resizable?: boolean }) {
       {isLive && (
         <div className="px-2 pt-1.5 pb-0 shrink-0">
           <LiveRunStateBar />
+        </div>
+      )}
+
+      {/* P4: Approval gate card — shown when task is awaiting operator approval */}
+      {isLive && livePhase?.phase === 'awaiting_approval' && viewingTaskId && (
+        <div className="shrink-0">
+          <ApprovalGateCard
+            taskId={viewingTaskId}
+            livePhase={livePhase}
+            laneIds={derivedLaneIds}
+          />
+        </div>
+      )}
+
+      {/* P4: Selectively blocked lane indicator — shown when operator has partially approved */}
+      {isLive && livePhase?.phase === 'selectively_blocked' && (
+        <div className="shrink-0">
+          <SelectivelyBlockedLaneGrid livePhase={livePhase} />
         </div>
       )}
 

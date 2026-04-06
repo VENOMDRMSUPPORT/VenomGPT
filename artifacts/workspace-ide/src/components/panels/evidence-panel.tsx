@@ -988,6 +988,127 @@ function RuntimeLifecycleBlock({ lifecycle }: { lifecycle: TaskEvidenceRuntimeLi
   );
 }
 
+// ─── P4: Orchestration section ────────────────────────────────────────────────
+
+interface OrchestrationBlockProps {
+  lanes: LaneSummary[] | null | undefined;
+  selectivelyBlockedLanes?: string[] | null;
+}
+
+function OrchestrationBlock({ lanes, selectivelyBlockedLanes }: OrchestrationBlockProps) {
+  if (!lanes || lanes.length === 0) {
+    return <AbsentBlock message="No parallel dispatch data for this task." />;
+  }
+
+  const distinctLaneIds = [...new Set(lanes.map(l => l.laneId))].sort();
+  const laneCount = distinctLaneIds.length;
+  const dispatchMode = laneCount > 1 ? 'parallel' : 'serial_fallback';
+
+  const laneStatusMap = new Map<string, LaneSummary>();
+  for (const lane of lanes) {
+    if (!laneStatusMap.has(lane.laneId)) laneStatusMap.set(lane.laneId, lane);
+  }
+
+  const DISPATCH_COLOR: Record<string, string> = {
+    parallel:       'text-teal-300/80 bg-teal-400/10 border-teal-400/25',
+    serial_fallback:'text-slate-300/60 bg-slate-400/8 border-slate-400/20',
+  };
+  const dispatchStyle = DISPATCH_COLOR[dispatchMode] ?? DISPATCH_COLOR.serial_fallback;
+
+  const STATUS_DOT: Record<string, string> = {
+    success:  'bg-green-400/70',
+    failed:   'bg-red-400/70',
+    error:    'bg-red-400/70',
+    cancelled:'bg-amber-400/70',
+  };
+  const STATUS_TEXT: Record<string, string> = {
+    success:  'text-green-300/80',
+    failed:   'text-red-300/80',
+    error:    'text-red-300/80',
+    cancelled:'text-amber-300/80',
+  };
+
+  const failureIsolationLanes = lanes.filter(
+    l => l.status === 'failed' || l.status === 'error' || l.status === 'cancelled'
+  );
+
+  return (
+    <div className="rounded border border-cyan-400/20 bg-cyan-400/5 text-xs overflow-hidden border-l-2 border-l-cyan-500/60">
+      <div className="px-3 py-2.5 space-y-2.5">
+
+        {/* Header stats */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div>
+            <span className="text-[10px] text-cyan-400/40 uppercase tracking-wider block mb-0.5">Dispatch Mode</span>
+            <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded border ${dispatchStyle}`}>
+              {dispatchMode}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-cyan-400/40 uppercase tracking-wider block mb-0.5">Lanes</span>
+            <span className="font-mono text-cyan-200/80 font-semibold">{laneCount}</span>
+          </div>
+        </div>
+
+        {/* Per-lane status table */}
+        <div>
+          <span className="text-[10px] text-cyan-400/40 uppercase tracking-wider block mb-1">Per-Lane Status</span>
+          <div className="rounded border border-cyan-400/10 overflow-hidden divide-y divide-cyan-400/8">
+            <div className="grid grid-cols-3 px-2 py-1 bg-cyan-400/5 text-[10px] text-cyan-400/40 uppercase tracking-wider">
+              <span>Lane ID</span>
+              <span>Status</span>
+              <span>Failure</span>
+            </div>
+            {distinctLaneIds.map(laneId => {
+              const lane = laneStatusMap.get(laneId)!;
+              const dotColor = STATUS_DOT[lane.status] ?? 'bg-muted-foreground/30';
+              const textColor = STATUS_TEXT[lane.status] ?? 'text-muted-foreground/50';
+              return (
+                <div key={laneId} className="grid grid-cols-3 px-2 py-1.5 items-center">
+                  <span className="font-mono text-cyan-200/70 text-[11px]">{laneId}</span>
+                  <span className={`flex items-center gap-1.5 ${textColor}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                    {lane.status}
+                  </span>
+                  <span className="text-red-400/60 text-[10px] truncate" title={lane.error ?? undefined}>
+                    {lane.error ? lane.error.slice(0, 40) : '—'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Failure isolation events */}
+        {(failureIsolationLanes.length > 0 || (selectivelyBlockedLanes && selectivelyBlockedLanes.length > 0)) && (
+          <div>
+            <span className="text-[10px] text-cyan-400/40 uppercase tracking-wider block mb-1">Failure Isolation Events</span>
+            <div className="space-y-1">
+              {failureIsolationLanes.map(lane => (
+                <div key={lane.laneId} className="flex items-start gap-2 px-2 py-1 rounded border border-red-400/15 bg-red-400/5 text-[11px]">
+                  <AlertCircle className="w-3 h-3 text-red-400/60 shrink-0 mt-0.5" />
+                  <span>
+                    <span className="font-mono text-red-300/70">{lane.laneId}</span>
+                    <span className="text-muted-foreground/50 ml-1">{lane.status}</span>
+                    {lane.error && <span className="text-red-400/50 ml-1">— {lane.error.slice(0, 80)}</span>}
+                  </span>
+                </div>
+              ))}
+              {selectivelyBlockedLanes && selectivelyBlockedLanes.filter(id => !failureIsolationLanes.find(l => l.laneId === id)).map(id => (
+                <div key={id} className="flex items-center gap-2 px-2 py-1 rounded border border-amber-400/15 bg-amber-400/5 text-[11px]">
+                  <Shield className="w-3 h-3 text-amber-400/60 shrink-0" />
+                  <span className="font-mono text-amber-300/70">{id}</span>
+                  <span className="text-muted-foreground/50">operator-blocked via selective approval</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── task-9: Continuation Lineage section ────────────────────────────────────
 
 function ContinuationLineageBlock({ lineage }: { lineage: ContinuationLineage | null | undefined }) {
@@ -2304,7 +2425,15 @@ export function EvidencePanel({ taskId, isLive }: EvidencePanelProps) {
         {/* (g) Operator Steering — orange left border; only rendered when steering actions exist */}
         <OperatorSteeringSection actions={actionsData?.actions ?? []} />
 
-        {/* ── New Task-9 orchestration sections ──────────────────────────── */}
+        {/* ── New Task-9 / P4 orchestration sections ──────────────────────── */}
+
+        {/* (h0) Orchestration — cyan left border (P4) */}
+        <Section icon={Network} title="Orchestration" accentColor="border-l-cyan-500/60">
+          <OrchestrationBlock
+            lanes={ev.executionSummary?.laneEvidence}
+            selectivelyBlockedLanes={ev.executionSummary?.selectivelyBlockedLanes}
+          />
+        </Section>
 
         {/* (h) Continuation Lineage — sky left border */}
         <Section icon={GitMerge} title="Continuation Lineage" accentColor="border-l-sky-500/60">
