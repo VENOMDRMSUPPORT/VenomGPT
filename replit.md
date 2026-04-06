@@ -76,6 +76,29 @@ The workspace-ide layout follows the Replit reference design with a single task 
 - `src/components/panels/task-console.tsx` — Main task surface with state-aware glow based on viewing task status
 - `src/store/use-ide-store.ts` — `mainView: MainView` state ('editor' | 'board') + `setMainView` action
 
+## Development History — Completed Passes
+
+### Pass 4 — Premium Orchestration UI Surface (CLOSED)
+- `OrchestrationBlock` — visual surface for orchestration events
+- `ApprovalGateCard` — approval checkpoint UI with `checkpointId` wired to `PATCH /api/agent/runs/:id/approval` using authoritative `APPROVAL_CHECKPOINT` source
+- `SelectivelyBlockedLaneGrid` — blocked lane visualization
+
+### Pass 5 — Product Polish: Settings, History & Board (CLOSED)
+
+**Sub-group A — Settings Page (CLOSED)**
+- Toast notifications (success + error) for save / reset / clear actions in `settings.tsx`
+- All settings hooks pre-wired; full-object PATCH strategy confirmed
+
+**Sub-group B — Task History UX (CLOSED)**
+- Search input + status filter chips (done / error / cancelled / interrupted) in `task-list-panel.tsx`
+- AND-combined filtering (search × chips), match count display (`N of M`)
+- Bulk-delete disabled per Option C (full clear available from Settings)
+
+**Sub-group C — Board & Integrations (CLOSED)**
+- C1 (`task-board.tsx`): Plan association badges from `GET /api/board/plans` (by `boardTaskId`); contextual status-change buttons via `updateBoardTaskStatus` → `PATCH /api/board/tasks/:id`; `STATUS_TRANSITIONS` map per card state (Retry / Archive / Restore / Cancel); no drag-and-drop
+- C2 (`workspace-composer.tsx`): Static `SUGGESTED_PROMPTS` removed; live fetch from `GET /api/board/prompts` when `activeTaskId === null`; up to 3 deduplicated chips shown only when `!isRunning && !prompt.trim()`; disappear on typing or task activation
+- C3 (`integrations.tsx`): `ProviderDiagnosticsPanel` added — fetches `GET /api/provider-diagnostics` on mount, shows active provider name / active model / lane count / connection health / per-lane rows; Refresh button also increments `diagRefreshKey` to retrigger diagnostics
+
 ## Shared Design System
 
 - **`artifacts/workspace-ide/src/lib/theme.ts`** — Canonical shared theme module. Exports `VGTheme` type and `darkTheme` / `lightTheme` objects used by both `home.tsx` and `workspace.tsx`. All visual design tokens live here: backgrounds, surfaces, borders, text, accent colors, shadows, gradients, and atmospheric effects. Adding new themes or tokens should happen in this single file.
